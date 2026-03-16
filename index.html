@@ -6,6 +6,8 @@
 <title>ContaFácil</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 
@@ -252,6 +254,10 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</button>
         <button class="nav-item" onclick="showPage('pl',this)"><span class="nav-icon">📋</span>Estado de Resultados</button>
         <button class="nav-item" onclick="showPage('historial',this)"><span class="nav-icon">🧾</span>Historial</button>
+        <button class="nav-item" onclick="showPage('importar',this)"><span class="nav-icon">📥</span>Importar Excel</button>
+        <button class="nav-item" onclick="showPage('insights',this)"><span class="nav-icon">✨</span>Insights IA</button>
+        <button class="nav-item" onclick="showPage('forecast',this)"><span class="nav-icon">🔮</span>Forecast</button>
+        <button class="nav-item" onclick="showPage('reporte',this)"><span class="nav-icon">📄</span>Reporte PDF</button>
       </nav>
     </div>
     <div>
@@ -327,6 +333,287 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         </select>
       </div>
       <div class="card"><div class="tx-list" style="max-height:none" id="histList"></div></div>
+    </div>
+
+    <!-- Importar -->
+    <div class="page" id="page-importar">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Importar desde Excel</div>
+          <div class="page-subtitle">Sube tu archivo y mapea tus columnas</div>
+        </div>
+      </div>
+
+      <!-- Step 1: Upload -->
+      <div id="importStep1">
+        <div class="card" style="max-width:600px">
+          <div class="card-title" style="margin-bottom:0.5rem">📂 Paso 1 — Sube tu archivo</div>
+          <div class="card-sub" style="margin-bottom:1.25rem">Acepta archivos .xlsx, .xls o .csv</div>
+          <div id="dropZone" onclick="document.getElementById('fileInput').click()" style="border:2px dashed var(--border);border-radius:10px;padding:2.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2)">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div>
+            <div style="font-weight:600;margin-bottom:0.3rem">Arrastra tu archivo aquí</div>
+            <div style="font-size:0.8rem;color:var(--ink-muted)">o haz clic para seleccionar</div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+          </div>
+          <p style="font-size:0.75rem;color:var(--ink-muted);margin-top:0.75rem;text-align:center">Tu archivo no se sube a ningún servidor — todo se procesa en tu navegador</p>
+        </div>
+      </div>
+
+      <!-- Step 2: Map columns -->
+      <div id="importStep2" style="display:none">
+        <div class="card" style="max-width:700px">
+          <div class="card-title" style="margin-bottom:0.25rem">🗂️ Paso 2 — Conecta tus columnas</div>
+          <div class="card-sub" style="margin-bottom:1.5rem">Dinos cuál columna de tu Excel corresponde a cada campo</div>
+
+          <div id="columnMapper" style="display:flex;flex-direction:column;gap:0.85rem;margin-bottom:1.5rem"></div>
+
+          <div style="background:var(--surface2);border-radius:8px;padding:1rem;margin-bottom:1.25rem">
+            <div style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-muted);margin-bottom:0.5rem">Vista previa (primeras 3 filas)</div>
+            <div id="previewTable" style="overflow-x:auto;font-size:0.78rem"></div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem">
+            <button class="btn-outline" onclick="resetImport()">← Volver</button>
+            <button class="btn-submit" style="margin-top:0;flex:1" onclick="runImport()">Importar datos →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Done -->
+      <div id="importStep3" style="display:none">
+        <div class="card" style="max-width:500px;text-align:center;padding:2.5rem">
+          <div style="font-size:3rem;margin-bottom:1rem">✅</div>
+          <div class="card-title" style="font-size:1.1rem;margin-bottom:0.5rem">¡Importación completa!</div>
+          <div id="importSummary" style="color:var(--ink-muted);font-size:0.85rem;margin-bottom:1.5rem"></div>
+          <button class="btn-submit" style="margin-top:0;max-width:200px;margin:0 auto" onclick="goToDashboard()">Ver Dashboard →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insights -->
+    <div class="page" id="page-insights">
+      <div class="topbar">
+        <div>
+          <div class="page-title">✨ Insights IA</div>
+          <div class="page-subtitle">Análisis automático de tus finanzas con inteligencia artificial</div>
+        </div>
+        <button class="btn-submit" id="btnAnalizar" onclick="generarInsights()" style="margin-top:0;width:auto;padding:0.6rem 1.4rem;font-size:0.85rem">
+          ✨ Analizar mis finanzas
+        </button>
+      </div>
+
+      <!-- Empty state -->
+      <div id="insightsEmpty" class="card" style="text-align:center;padding:3rem 2rem;max-width:500px">
+        <div style="font-size:3rem;margin-bottom:1rem">🔍</div>
+        <div style="font-weight:700;font-size:1.05rem;margin-bottom:0.5rem">Listo para analizar</div>
+        <div style="color:var(--ink-muted);font-size:0.85rem;margin-bottom:1.5rem">Presiona el botón para que la IA analice tus datos y te dé recomendaciones personalizadas.</div>
+        <button onclick="generarInsights()" class="btn-submit" style="margin-top:0;max-width:220px;margin:0 auto">✨ Analizar mis finanzas</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="insightsLoading" style="display:none;text-align:center;padding:3rem">
+        <div class="spinner" style="margin:0 auto 1rem;border-top-color:var(--accent)"></div>
+        <div style="color:var(--ink-muted);font-size:0.85rem">Analizando tus datos financieros...</div>
+      </div>
+
+      <!-- Results -->
+      <div id="insightsResult" style="display:none">
+        <!-- Summary bar -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem" id="insightKpis"></div>
+        <!-- Insight cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem" id="insightCards"></div>
+        <!-- Regenerate -->
+        <div style="text-align:center;margin-top:1.5rem">
+          <button onclick="generarInsights()" style="padding:0.5rem 1.25rem;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-family:'Instrument Sans',sans-serif;font-size:0.82rem;cursor:pointer;color:var(--ink-muted)">🔄 Volver a analizar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forecast -->
+    <div class="page" id="page-forecast">
+      <div class="topbar">
+        <div>
+          <div class="page-title">🔮 Forecast Financiero</div>
+          <div class="page-subtitle">Proyección de los próximos 3 meses basada en tu historial</div>
+        </div>
+        <button class="btn-submit" id="btnForecast" onclick="generarForecast()" style="margin-top:0;width:auto;padding:0.6rem 1.4rem;font-size:0.85rem">
+          🔮 Generar proyección
+        </button>
+      </div>
+
+      <!-- Explicación -->
+      <div class="card" style="background:var(--blue-bg);border:1.5px solid #b0c8f0;margin-bottom:1.25rem">
+        <div style="display:flex;gap:1rem;align-items:flex-start">
+          <div style="font-size:1.8rem;flex-shrink:0">💡</div>
+          <div>
+            <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.4rem;color:var(--blue)">¿Cómo funciona el Forecast?</div>
+            <div style="font-size:0.82rem;color:var(--ink);line-height:1.7">
+              El sistema analiza tu <strong>historial de ingresos y gastos</strong> y calcula tu tendencia usando <strong>suavización exponencial</strong> — 
+              un método estadístico que le da más peso a los meses recientes, porque reflejan mejor tu situación actual que meses lejanos.<br><br>
+              Por ejemplo, si tus ingresos han crecido un 8% cada mes, el forecast proyecta ese ritmo hacia adelante.
+              <strong>No es una promesa</strong> — es una proyección basada en tu comportamiento actual para ayudarte a planear mejor.<br><br>
+              💡 <strong>Entre más meses de datos tengas registrados, mayor será la precisión del forecast.</strong> 
+              Con 3 meses obtienes una estimación básica; con 6 meses o más, la proyección se vuelve significativamente más confiable.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="forecastEmpty" class="card" style="text-align:center;padding:3rem 2rem;max-width:500px">
+        <div style="font-size:3rem;margin-bottom:1rem">🔮</div>
+        <div style="font-weight:700;font-size:1.05rem;margin-bottom:0.5rem">Proyecta tu futuro financiero</div>
+        <div style="color:var(--ink-muted);font-size:0.85rem;margin-bottom:1.5rem">Necesitas al menos 2 meses de datos para generar una proyección confiable.</div>
+        <button onclick="generarForecast()" class="btn-submit" style="margin-top:0;max-width:220px;margin:0 auto">🔮 Generar proyección</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="forecastLoading" style="display:none;text-align:center;padding:3rem">
+        <div class="spinner" style="margin:0 auto 1rem;border-top-color:var(--accent)"></div>
+        <div style="color:var(--ink-muted);font-size:0.85rem">Calculando tu proyección...</div>
+      </div>
+
+      <!-- Results -->
+      <div id="forecastResult" style="display:none">
+
+        <!-- Alert banner -->
+        <div id="forecastAlert" style="margin-bottom:1.25rem;display:none"></div>
+
+        <!-- Forecast cards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem" id="forecastCards"></div>
+
+        <!-- Chart -->
+        <div class="card" style="margin-bottom:1.25rem">
+          <div class="card-title" style="margin-bottom:0.3rem">📈 Proyección gráfica</div>
+          <div class="card-sub" style="margin-bottom:1rem">Histórico vs proyección — barras sólidas = real, barras transparentes = estimado</div>
+          <div class="chart-wrap"><canvas id="forecastChart"></canvas></div>
+        </div>
+
+        <!-- Summary table -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:1rem">📋 Resumen de proyección</div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--ink-muted);font-weight:600">Mes</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;color:var(--green);font-weight:600">Ingresos</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;color:var(--red);font-weight:600">Gastos</th>
+                <th style="text-align:right;padding:0.5rem 0.75rem;font-weight:600">Utilidad</th>
+                <th style="text-align:center;padding:0.5rem 0.75rem;color:var(--ink-muted);font-weight:600">Tipo</th>
+              </tr>
+            </thead>
+            <tbody id="forecastTable"></tbody>
+          </table>
+        </div>
+
+        <!-- Investment simulator -->
+        <div class="card" style="margin-top:1.25rem;border:1.5px solid #b0c8f0;background:var(--blue-bg)">
+          <div class="card-title" style="margin-bottom:0.3rem">💼 Simulador de inversión</div>
+          <div class="card-sub" style="margin-bottom:1.25rem">¿Qué pasa si haces una inversión? Simula el impacto en tus próximos 3 meses y compara escenarios.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+            <div class="form-group" style="margin-bottom:0">
+              <label style="font-size:0.78rem">💰 Monto de inversión ($)</label>
+              <input type="number" id="invMonto" placeholder="Ej: 50000" min="0" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.85rem;background:var(--surface);outline:none">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label style="font-size:0.78rem">📅 ¿En qué mes la harás?</label>
+              <select id="invMes" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.85rem;background:var(--surface);color:var(--ink);outline:none">
+                <option value="1">Próximo mes</option>
+                <option value="2">En 2 meses</option>
+                <option value="3">En 3 meses</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label style="font-size:0.78rem">📈 Crecimiento esperado en ingresos (%)</label>
+              <input type="number" id="invCrecimiento" placeholder="Ej: 20" min="0" max="200" style="width:100%;padding:0.6rem 0.8rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.85rem;background:var(--surface);outline:none">
+            </div>
+          </div>
+          <button onclick="simularInversion()" class="btn-submit" style="margin-top:0;width:auto;padding:0.6rem 1.4rem;font-size:0.85rem">📊 Simular escenarios</button>
+          <div id="invResult" style="display:none;margin-top:1.25rem"></div>
+        </div>
+
+        <!-- Regenerate -->
+        <div style="text-align:center;margin-top:1.5rem">
+          <button onclick="generarForecast()" style="padding:0.5rem 1.25rem;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);font-family:'Instrument Sans',sans-serif;font-size:0.82rem;cursor:pointer;color:var(--ink-muted)">🔄 Recalcular</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reporte PDF -->
+    <div class="page" id="page-reporte">
+      <div class="topbar">
+        <div>
+          <div class="page-title">📄 Reporte PDF</div>
+          <div class="page-subtitle">Genera un reporte profesional para contadores, socios o bancos</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:380px 1fr;gap:1.25rem;align-items:flex-start">
+
+        <!-- Config panel -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:1.25rem">⚙️ Configurar reporte</div>
+
+          <div class="form-group">
+            <label>📅 Período del reporte</label>
+            <select id="rptPeriodo" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
+              <option value="mensual">Mensual</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="rptMesGroup">
+            <label>🗓️ Mes</label>
+            <select id="rptMes" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
+              <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+              <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+              <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+              <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📅 Año</label>
+            <select id="rptAnio" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>🏢 Preparado para</label>
+            <input type="text" id="rptPara" placeholder="Ej: Contador Juan García, Banco BBVA..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;outline:none">
+          </div>
+
+          <div class="form-group">
+            <label>📝 Nota adicional (opcional)</label>
+            <textarea id="rptNota" rows="2" placeholder="Comentario para el destinatario..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;resize:none;outline:none"></textarea>
+          </div>
+
+          <div style="margin-bottom:1rem">
+            <label style="font-size:0.78rem;font-weight:600;display:block;margin-bottom:0.6rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.06em">Secciones a incluir</label>
+            <div style="display:flex;flex-direction:column;gap:0.4rem">
+              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_resumen" checked> Resumen ejecutivo (KPIs)</label>
+              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_pl" checked> Estado de resultados</label>
+              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_cats" checked> Análisis por categoría</label>
+              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_mensual" checked> Comparativo mensual</label>
+              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_forecast" checked> Forecast (próximos 3 meses)</label>
+            </div>
+          </div>
+
+          <button onclick="generarPDF()" class="btn-submit" id="btnPDF" style="margin-top:0">
+            📄 Generar y descargar PDF
+          </button>
+        </div>
+
+        <!-- Preview panel -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:0.5rem">👁️ Vista previa del reporte</div>
+          <div class="card-sub" style="margin-bottom:1.25rem">Resumen de lo que incluirá el PDF</div>
+          <div id="rptPreview"></div>
+        </div>
+
+      </div>
     </div>
   </main>
 </div>
@@ -574,7 +861,7 @@ function renderPL(filterYM=null) {
   Object.entries(gasMap).forEach(([k,v])=>{html+=`<tr><td>${CAT_LABELS[k]||k}</td><td class="text-red">(${fmt(v)})</td><td>${totalIng>0?((v/totalIng)*100).toFixed(1)+'%':'—'}</td></tr>`;});
   html+=`<tr class="pl-subtotal"><td><strong>Total Gastos</strong></td><td class="text-red"><strong>(${fmt(totalGas)})</strong></td><td>${totalIng>0?((totalGas/totalIng)*100).toFixed(1)+'%':'—'}</td></tr>`;
   const utilClass=util>=0?'text-green':'text-red'; const margen=totalIng>0?((util/totalIng)*100).toFixed(1)+'%':'—';
-  html+=`<tr class="pl-net" style="background:${util>=0?'var(--green-bg)':'var(--red-bg)'}"><td>🏆 UTILIDAD NETA</td><td class="${utilClass}">${fmt(util)}</td><td class="${utilClass}">${margen}</td></tr>`;
+  html+=`<tr class="pl-net" style="background:${util>=0?'var(--green-bg)':'var(--red-bg)'}"><td>📊 UTILIDAD BRUTA</td><td class="${utilClass}">${fmt(util)}</td><td class="${utilClass}">${margen}</td></tr>`;
   document.getElementById('plBody').innerHTML=html||`<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--ink-muted)">Sin movimientos</td></tr>`;
 }
 
@@ -591,9 +878,1125 @@ function showPage(page,btn) {
   document.getElementById(`page-${page}`).classList.add('active'); btn.classList.add('active');
   if(page==='pl')renderPL(S.plMonth);
   if(page==='historial')renderHistorial();
+  if(page==='reporte')initReportePage();
+
 }
 
 function showToast(msg,type='') { const t=document.getElementById('toast'); t.textContent=msg; t.className=`toast show ${type}`; setTimeout(()=>t.classList.remove('show'),2800); }
+
+
+// ── IMPORT EXCEL ──────────────────────────────────────────────
+let importedRows = [];
+let importColumns = [];
+
+// Load SheetJS dynamically
+function loadSheetJS(cb) {
+  if (window.XLSX) return cb();
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+// Drag & drop
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--accent)'; dz.style.background = 'var(--green-bg)'; });
+  dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--surface2)'; });
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--surface2)'; handleFile(e.dataTransfer.files[0]); });
+});
+
+function handleFile(file) {
+  if (!file) return;
+  loadSheetJS(() => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+        if (data.length < 2) return showToast('El archivo está vacío', 'err');
+
+        // Find the actual header row — look for a row with 3+ non-empty cells
+        // that doesn't look like a title (titles are usually merged/single cell)
+        let headerRowIdx = 0;
+        for (let i = 0; i < Math.min(10, data.length); i++) {
+          const nonEmpty = data[i].filter(c => c !== '' && c !== null && c !== undefined).length;
+          if (nonEmpty >= 3) { headerRowIdx = i; break; }
+        }
+
+        importColumns = data[headerRowIdx].map((h, i) => String(h||'').trim() || `Columna ${i+1}`);
+        // Only keep rows after header that have at least 2 non-empty cells
+        importedRows = data.slice(headerRowIdx + 1).filter(r => 
+          r.filter(c => c !== '' && c !== null && c !== undefined).length >= 2
+        );
+
+        if (importedRows.length === 0) return showToast('No se encontraron datos en el archivo', 'err');
+
+        renderColumnMapper();
+        renderPreview([data[headerRowIdx], ...data.slice(headerRowIdx+1, headerRowIdx+4)]);
+        document.getElementById('importStep1').style.display = 'none';
+        document.getElementById('importStep2').style.display = 'block';
+      } catch(err) {
+        showToast('Error al leer el archivo: ' + err.message, 'err');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+const IMPORT_FIELDS = [
+  { key: 'fecha', label: '📅 Fecha', required: true, hint: 'Ej: 2024-01-15, 15/01/2024' },
+  { key: 'concepto', label: '📝 Concepto / Descripción', required: true, hint: 'Nombre de la venta o gasto' },
+  { key: 'monto', label: '💰 Monto', required: true, hint: 'El valor numérico' },
+  { key: 'tipo', label: '🔄 Tipo (ingreso/gasto)', required: false, hint: 'Si no lo tienes, puedes asignarlo' },
+  { key: 'categoria', label: '🏷️ Categoría', required: false, hint: 'Opcional' },
+];
+
+function renderColumnMapper() {
+  const opts = ['-- No usar --', ...importColumns].map((c,i) => `<option value="${i-1}">${c}</option>`).join('');
+  document.getElementById('columnMapper').innerHTML = IMPORT_FIELDS.map(f => `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center;padding:0.75rem;background:var(--surface2);border-radius:8px">
+      <div>
+        <div style="font-weight:600;font-size:0.85rem">${f.label} ${f.required ? '<span style="color:var(--red)">*</span>' : ''}</div>
+        <div style="font-size:0.72rem;color:var(--ink-muted);margin-top:0.15rem">${f.hint}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <select id="map_${f.key}" ${f.key==='tipo'?'onchange="toggleTipoDefault()"':''} style="padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.82rem;background:var(--surface);color:var(--ink);outline:none">${opts}</select>
+        ${f.key === 'tipo' ? `<div id="map_tipo_default_wrap" style="margin-top:0.3rem">
+          <div style="font-size:0.7rem;color:var(--ink-muted);margin-bottom:0.3rem">Si no tienes columna de tipo, asigna uno para todos:</div>
+          <select id="map_tipo_default" style="padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.82rem;background:var(--surface);color:var(--ink);outline:none;width:100%">
+            <option value="ingreso">Todos son ingresos</option>
+            <option value="gasto">Todos son gastos</option>
+          </select>
+        </div>` : ''}
+      </div>
+    </div>`).join('');
+
+  // Auto-detect columns
+  importColumns.forEach((col, idx) => {
+    const low = col.toLowerCase();
+    if (low.includes('fecha') || low.includes('date')) setMapVal('fecha', idx);
+    if (low.includes('concepto') || low.includes('descripcion') || low.includes('description') || low.includes('detalle')) setMapVal('concepto', idx);
+    if (low.includes('monto') || low.includes('valor') || low.includes('amount') || low.includes('total') || low.includes('precio') || low.includes('venta')) setMapVal('monto', idx);
+    if (low.includes('tipo') || low.includes('type') || low.includes('categoria') || low.includes('category')) setMapVal('tipo', idx);
+  });
+  // Show/hide default tipo selector based on auto-detected columns
+  toggleTipoDefault();
+}
+
+function setMapVal(key, idx) {
+  const el = document.getElementById(`map_${key}`);
+  if (el) el.value = idx;
+}
+
+function toggleTipoDefault() {
+  const tipoSel = document.getElementById('map_tipo');
+  const wrap = document.getElementById('map_tipo_default_wrap');
+  if (!tipoSel || !wrap) return;
+  // If user selected a column (value >= 0), hide the default selector
+  const hasColumn = parseInt(tipoSel.value) >= 0;
+  wrap.style.display = hasColumn ? 'none' : 'block';
+}
+
+function renderPreview(rows) {
+  if (!rows.length) return;
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
+  document.getElementById('previewTable').innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>${headers.map(h => `<th style="padding:0.4rem 0.6rem;text-align:left;border-bottom:1px solid var(--border);color:var(--ink-muted);white-space:nowrap">${h||'—'}</th>`).join('')}</tr></thead>
+      <tbody>${dataRows.map(r => `<tr>${r.map(c => `<td style="padding:0.35rem 0.6rem;border-bottom:1px solid rgba(226,221,212,0.4);white-space:nowrap">${c||'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function parseDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val.toISOString().split('T')[0];
+  const s = String(val).trim();
+  if (!s || s === '') return null;
+
+  // Already in YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+
+  // DD/MM/YYYY or MM/DD/YYYY
+  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (slashMatch) {
+    const [_, a, b, y] = slashMatch;
+    // If first number > 12, it must be DD
+    const day = parseInt(a) > 12 ? a : b;
+    const month = parseInt(a) > 12 ? b : a;
+    return `${y}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+  }
+
+  // DD-MM-YYYY
+  const dashMatch = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
+  if (dashMatch) {
+    const [_, d, m, y] = dashMatch;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+
+  // Try native Date parse
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+
+  return null;
+}
+
+async function runImport() {
+  const fechaIdx = parseInt(document.getElementById('map_fecha').value);
+  const conceptoIdx = parseInt(document.getElementById('map_concepto').value);
+  const montoIdx = parseInt(document.getElementById('map_monto').value);
+  const tipoIdx = parseInt(document.getElementById('map_tipo').value);
+  const catIdx = parseInt(document.getElementById('map_categoria')?.value || -1);
+  const tipoDefault = document.getElementById('map_tipo_default')?.value || 'ingreso';
+
+  if (fechaIdx < 0 || conceptoIdx < 0 || montoIdx < 0) return showToast('Conecta los campos obligatorios (Fecha, Concepto, Monto)', 'err');
+  if (!S.activeBizId) return showToast('Selecciona un negocio primero', 'err');
+
+  const btn = document.querySelector('#importStep2 .btn-submit');
+  btn.disabled = true; btn.textContent = 'Importando...';
+
+  let ok = 0, skip = 0;
+  const batch = [];
+
+  for (const row of importedRows) {
+    const fecha = parseDate(row[fechaIdx]);
+    const concepto = String(row[conceptoIdx] || '').trim();
+    const monto = parseFloat(String(row[montoIdx]).replace(/[,$]/g,''));
+
+    if (!fecha || !concepto || isNaN(monto) || monto <= 0) { skip++; continue; }
+
+    let tipo = tipoDefault;
+    if (tipoIdx >= 0 && row[tipoIdx]) {
+      const t = String(row[tipoIdx]).toLowerCase();
+      if (t.includes('gasto') || t.includes('egreso') || t.includes('expense')) tipo = 'gasto';
+      else if (t.includes('ingreso') || t.includes('venta') || t.includes('income')) tipo = 'ingreso';
+    }
+
+    const categoria = catIdx >= 0 ? String(row[catIdx]||'').toLowerCase().trim() : (tipo === 'ingreso' ? 'ventas' : 'otro');
+
+    batch.push({ business_id: S.activeBizId, user_id: S.user.id, tipo, concepto, monto, categoria: categoria||'otro', fecha });
+    ok++;
+  }
+
+  if (batch.length > 0) {
+    // Insert in chunks of 100
+    for (let i = 0; i < batch.length; i += 100) {
+      await sb.from('transactions').insert(batch.slice(i, i+100));
+    }
+    await loadTransactions();
+  }
+
+  btn.disabled = false;
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('importStep3').style.display = 'block';
+  document.getElementById('importSummary').textContent = `Se importaron ${ok} movimientos correctamente.${skip > 0 ? ` Se omitieron ${skip} filas con datos incompletos.` : ''}`;
+  renderDashboard();
+}
+
+function resetImport() {
+  importedRows = []; importColumns = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('importStep1').style.display = 'block';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('importStep3').style.display = 'none';
+}
+
+function goToDashboard() {
+  resetImport();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-dashboard').classList.add('active');
+  document.querySelector('.nav-item').classList.add('active');
+}
+
+
+
+// ── INSIGHTS AUTOMÁTICOS ──────────────────────────────────────────
+function generarInsights() {
+  if (S.transactions.length === 0) return showToast('Primero registra algunos movimientos', 'err');
+
+  document.getElementById('insightsEmpty').style.display = 'none';
+  document.getElementById('insightsResult').style.display = 'none';
+  document.getElementById('insightsLoading').style.display = 'block';
+  document.getElementById('btnAnalizar').disabled = true;
+
+  setTimeout(() => {
+    const insights = calcularInsights();
+    renderInsights(insights);
+    document.getElementById('insightsLoading').style.display = 'none';
+    document.getElementById('insightsResult').style.display = 'block';
+    document.getElementById('btnAnalizar').disabled = false;
+  }, 800);
+}
+
+function calcularInsights() {
+  const txs = S.transactions;
+  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const util = ing - gas;
+  const margen = ing > 0 ? (util/ing*100) : 0;
+
+  // Monthly breakdown
+  const monthly = {};
+  txs.forEach(t => {
+    const ym = t.fecha.substring(0,7);
+    if (!monthly[ym]) monthly[ym] = {ing:0, gas:0, label:ym};
+    monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+  });
+  const months = Object.entries(monthly).sort();
+  const lastMonth = months[months.length-1]?.[1];
+  const prevMonth = months[months.length-2]?.[1];
+
+  // Categories
+  const cats = {};
+  txs.filter(t=>t.tipo==='gasto').forEach(t => {
+    const k = t.categoria||'otro';
+    cats[k] = (cats[k]||0) + t.monto;
+  });
+  const topCats = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const topCat = topCats[0];
+  const top3pct = topCats.slice(0,3).reduce((s,[,v])=>s+v,0) / (gas||1) * 100;
+
+  // Best month
+  const bestMonth = months.reduce((best, [m,v]) => v.ing > (best?.[1]?.ing||0) ? [m,v] : best, null);
+
+  // Growth
+  let ingGrowth = null;
+  if (lastMonth && prevMonth && prevMonth.ing > 0) {
+    ingGrowth = ((lastMonth.ing - prevMonth.ing) / prevMonth.ing) * 100;
+  }
+  let gasGrowth = null;
+  if (lastMonth && prevMonth && prevMonth.gas > 0) {
+    gasGrowth = ((lastMonth.gas - prevMonth.gas) / prevMonth.gas) * 100;
+  }
+
+  const insights = [];
+
+  // 1. Margen
+  if (margen >= 30) {
+    insights.push({ tipo:'positivo', icono:'🏆', titulo:'Margen de utilidad saludable', descripcion:`Tu margen de utilidad es del ${margen.toFixed(1)}%, lo que significa que por cada $100 que ingresas, te quedan $${margen.toFixed(0)} de ganancia. Esto es un indicador muy positivo para tu negocio.`, recomendacion:'Mantén controlados tus gastos principales para sostener este margen.' });
+  } else if (margen >= 15) {
+    insights.push({ tipo:'neutro', icono:'📊', titulo:'Margen de utilidad moderado', descripcion:`Tu margen de utilidad es del ${margen.toFixed(1)}%. Por cada $100 que ingresas, te quedan $${margen.toFixed(0)} de ganancia. Hay espacio para mejorar.`, recomendacion:'Revisa tus 3 categorías de gasto más grandes y busca reducirlas un 10%.' });
+  } else if (margen > 0) {
+    insights.push({ tipo:'alerta', icono:'⚠️', titulo:'Margen de utilidad bajo', descripcion:`Tu margen es del ${margen.toFixed(1)}%, lo que deja poco espacio ante cualquier imprevisto. Tus gastos representan el ${(100-margen).toFixed(1)}% de tus ingresos.`, recomendacion:'Identifica gastos no esenciales que puedas reducir o eliminar este mes.' });
+  } else {
+    insights.push({ tipo:'negativo', icono:'🚨', titulo:'Gastos mayores que ingresos', descripcion:`Tus gastos (${fmt(gas)}) superan tus ingresos (${fmt(ing)}) por ${fmt(Math.abs(util))}. Es importante atender esto de inmediato.`, recomendacion:'Haz una revisión urgente de gastos y enfócate en aumentar ingresos este mes.' });
+  }
+
+  // 2. Crecimiento de ingresos
+  if (ingGrowth !== null) {
+    if (ingGrowth > 10) {
+      insights.push({ tipo:'positivo', icono:'📈', titulo:'Ingresos en crecimiento', descripcion:`Tus ingresos crecieron un ${ingGrowth.toFixed(1)}% comparado con el mes anterior (de ${fmt(prevMonth.ing)} a ${fmt(lastMonth.ing)}). Tu negocio va en la dirección correcta.`, recomendacion:'Identifica qué acciones generaron este crecimiento y repítelas.' });
+    } else if (ingGrowth < -10) {
+      insights.push({ tipo:'alerta', icono:'📉', titulo:'Caída en ingresos este mes', descripcion:`Tus ingresos bajaron un ${Math.abs(ingGrowth).toFixed(1)}% respecto al mes anterior (de ${fmt(prevMonth.ing)} a ${fmt(lastMonth.ing)}). Vale la pena revisar qué pasó.`, recomendacion:'Analiza si fue una temporada baja o si hay una causa específica que atender.' });
+    }
+  }
+
+  // 3. Gastos creciendo más que ingresos
+  if (gasGrowth !== null && ingGrowth !== null && gasGrowth > ingGrowth + 5) {
+    insights.push({ tipo:'alerta', icono:'🔔', titulo:'Gastos crecen más rápido que ingresos', descripcion:`Tus gastos aumentaron ${gasGrowth.toFixed(1)}% mientras tus ingresos solo crecieron ${ingGrowth.toFixed(1)}%. Si esta tendencia continúa, tu margen se reducirá.`, recomendacion:'Revisa qué categoría de gasto creció más y evalúa si es necesario.' });
+  }
+
+  // 4. Categoría dominante
+  if (topCat && gas > 0) {
+    const pct = (topCat[1]/gas*100);
+    const label = CAT_LABELS[topCat[0]] || topCat[0];
+    if (pct > 40) {
+      insights.push({ tipo:'neutro', icono:'🔍', titulo:`${label} domina tus gastos`, descripcion:`El ${pct.toFixed(0)}% de todos tus gastos corresponde a ${label} (${fmt(topCat[1])}). Concentrar tanto gasto en una sola categoría puede ser un riesgo.`, recomendacion:`Evalúa si puedes negociar mejores condiciones o reducir costos en ${label}.` });
+    } else {
+      insights.push({ tipo:'positivo', icono:'⚖️', titulo:'Gastos bien distribuidos', descripcion:`Tu categoría más grande es ${label} con el ${pct.toFixed(0)}% del gasto total (${fmt(topCat[1])}). Tus gastos están relativamente diversificados.`, recomendacion:'Mantén este balance y revisa mensualmente que ninguna categoría crezca desproporcionadamente.' });
+    }
+  }
+
+  // 5. Mejor mes
+  if (bestMonth) {
+    const [bm, bv] = bestMonth;
+    insights.push({ tipo:'positivo', icono:'🌟', titulo:`Tu mejor mes fue ${bm}`, descripcion:`En ${bm} lograste ${fmt(bv.ing)} en ingresos, tu mejor marca histórica. La utilidad ese mes fue de ${fmt(bv.ing - bv.gas)}.`, recomendacion:'Analiza qué hiciste diferente ese mes y replica esas acciones.' });
+  }
+
+  // 6. Concentración de gastos en top 3
+  if (topCats.length >= 3 && gas > 0) {
+    insights.push({ tipo:'neutro', icono:'📦', titulo:'Top 3 categorías concentran gastos', descripcion:`Tus 3 principales categorías de gasto (${topCats.slice(0,3).map(([k])=>CAT_LABELS[k]||k).join(', ')}) representan el ${top3pct.toFixed(0)}% de todos tus gastos.`, recomendacion:'Enfoca tu atención en estas 3 categorías para tener el mayor impacto en reducción de costos.' });
+  }
+
+  return insights.slice(0, 6);
+}
+
+function renderInsights(insights) {
+  const txs = S.transactions;
+  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const util = ing - gas;
+  const margen = ing > 0 ? (util/ing*100) : 0;
+
+  // KPIs
+  document.getElementById('insightKpis').innerHTML = [
+    {label:'Ingresos', val:fmt(ing), color:'var(--green)', icon:'💰'},
+    {label:'Gastos', val:fmt(gas), color:'var(--red)', icon:'📤'},
+    {label:'Utilidad', val:fmt(util), color:util>=0?'var(--green)':'var(--red)', icon:'📈'},
+    {label:'Margen', val:margen.toFixed(1)+'%', color:'var(--gold)', icon:'🎯'},
+  ].map(k=>`
+    <div class="kpi-card">
+      <div class="kpi-top"><div class="kpi-label">${k.label}</div><div class="kpi-icon">${k.icon}</div></div>
+      <div class="kpi-value" style="color:${k.color}">${k.val}</div>
+    </div>`).join('');
+
+  // Cards
+  const colorMap = {
+    positivo:{bg:'var(--green-bg)',border:'#a8d5b5',badge:'#1e7a45',label:'✅ Positivo'},
+    negativo:{bg:'var(--red-bg)',border:'#f0b8b0',badge:'var(--red)',label:'⚠️ Atención'},
+    alerta:{bg:'var(--gold-bg)',border:'#f0d890',badge:'var(--gold)',label:'🔔 Alerta'},
+    neutro:{bg:'var(--blue-bg)',border:'#b0c8f0',badge:'var(--blue)',label:'💡 Dato'},
+  };
+
+  document.getElementById('insightCards').innerHTML = insights.map(ins => {
+    const c = colorMap[ins.tipo] || colorMap.neutro;
+    return `
+      <div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:14px;padding:1.25rem">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem">
+          <span style="font-size:1.6rem">${ins.icono}</span>
+          <div>
+            <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${c.badge};margin-bottom:0.15rem">${c.label}</div>
+            <div style="font-weight:700;font-size:0.92rem;line-height:1.3">${ins.titulo}</div>
+          </div>
+        </div>
+        <div style="font-size:0.82rem;color:var(--ink);line-height:1.6;margin-bottom:0.75rem">${ins.descripcion}</div>
+        <div style="font-size:0.78rem;padding:0.5rem 0.75rem;background:rgba(255,255,255,0.6);border-radius:8px;color:var(--ink-muted);line-height:1.5">
+          <strong>💡 Recomendación:</strong> ${ins.recomendacion}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+
+// ── FORECAST ──────────────────────────────────────────
+let forecastChartInstance = null;
+
+function generarForecast() {
+  const txs = S.transactions;
+  if (txs.length === 0) return showToast('Primero registra algunos movimientos', 'err');
+
+  // Build monthly data
+  const monthly = {};
+  txs.forEach(t => {
+    const ym = t.fecha.substring(0,7);
+    if (!monthly[ym]) monthly[ym] = {ing:0, gas:0};
+    monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+  });
+  const months = Object.entries(monthly).sort();
+
+  if (months.length < 2) {
+    showToast('Necesitas al menos 2 meses de datos para el forecast', 'err');
+    return;
+  }
+
+  document.getElementById('forecastEmpty').style.display = 'none';
+  document.getElementById('forecastResult').style.display = 'none';
+  document.getElementById('forecastLoading').style.display = 'block';
+  document.getElementById('btnForecast').disabled = true;
+
+  setTimeout(() => {
+    // Exponential smoothing α=0.4 — optimal for volatile small business data
+    // More recent months get exponentially more weight
+    const ALPHA = 0.4;
+    const n = months.length;
+    const ingValues = months.map(([,v]) => v.ing);
+    const gasValues = months.map(([,v]) => v.gas);
+
+    function expSmoothedGrowth(values) {
+      if (values.length < 2) return 0;
+      // Calculate month-over-month growth rates
+      const rates = [];
+      for (let i = 1; i < values.length; i++) {
+        if (values[i-1] > 0) rates.push((values[i] - values[i-1]) / values[i-1]);
+        else rates.push(0);
+      }
+      // Apply exponential smoothing: recent rates have exponentially more weight
+      let smoothed = rates[0];
+      for (let i = 1; i < rates.length; i++) {
+        smoothed = ALPHA * rates[i] + (1 - ALPHA) * smoothed;
+      }
+      // Cap between -30% and +30%
+      return Math.max(-0.30, Math.min(0.30, smoothed));
+    }
+
+    const ingGrowth = expSmoothedGrowth(ingValues);
+    const gasGrowth = expSmoothedGrowth(gasValues);
+
+    // Store for investment simulator
+    window._forecastData = { months, ingGrowth, gasGrowth, ingValues, gasValues };
+
+    // Last known values
+    const lastIng = ingValues[n-1];
+    const lastGas = gasValues[n-1];
+
+    // Generate next 3 months
+    const lastMonthStr = months[n-1][0];
+    const [lastYear, lastMon] = lastMonthStr.split('-').map(Number);
+
+    const projections = [];
+    for (let i = 1; i <= 3; i++) {
+      let m = lastMon + i, y = lastYear;
+      if (m > 12) { m -= 12; y++; }
+      const label = `${y}-${String(m).padStart(2,'0')}`;
+      const projIng = lastIng * Math.pow(1 + ingGrowth, i);
+      const projGas = lastGas * Math.pow(1 + gasGrowth, i);
+      projections.push({ label, ing: Math.max(0, projIng), gas: Math.max(0, projGas) });
+    }
+
+    // Render alert if gastos growing faster than ingresos
+    const alertEl = document.getElementById('forecastAlert');
+    if (gasGrowth > ingGrowth + 0.05) {
+      const monthsToBreakeven = Math.ceil(Math.log(lastIng/lastGas) / Math.log((1+gasGrowth)/(1+ingGrowth)));
+      alertEl.style.display = 'block';
+      alertEl.innerHTML = `
+        <div style="background:var(--gold-bg);border:1.5px solid #f0d890;border-radius:12px;padding:1rem 1.25rem;display:flex;gap:0.75rem;align-items:center">
+          <span style="font-size:1.5rem">⚠️</span>
+          <div style="font-size:0.83rem;line-height:1.6">
+            <strong>Tus gastos están creciendo más rápido que tus ingresos.</strong> 
+            Si esta tendencia continúa, tus gastos podrían superar tus ingresos en aproximadamente <strong>${monthsToBreakeven > 0 && monthsToBreakeven < 24 ? monthsToBreakeven + ' meses' : 'los próximos meses'}</strong>.
+            Te recomendamos revisar tus gastos principales.
+          </div>
+        </div>`;
+    } else {
+      alertEl.style.display = 'none';
+    }
+
+    // Render forecast cards
+    document.getElementById('forecastCards').innerHTML = projections.map((p, i) => {
+      const util = p.ing - p.gas;
+      const margen = p.ing > 0 ? (util/p.ing*100) : 0;
+      const nombres = ['Próximo mes','En 2 meses','En 3 meses'];
+      return `
+        <div class="card" style="border-top:3px solid ${util>=0?'var(--green)':'var(--red)'}">
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin-bottom:0.3rem">${nombres[i]}</div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--ink-muted);margin-bottom:0.9rem">${p.label}</div>
+          <div style="display:flex;flex-direction:column;gap:0.45rem">
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem">
+              <span style="color:var(--ink-muted)">💰 Ingresos est.</span>
+              <span style="color:var(--green);font-weight:600">${fmt(p.ing)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem">
+              <span style="color:var(--ink-muted)">📤 Gastos est.</span>
+              <span style="color:var(--red);font-weight:600">${fmt(p.gas)}</span>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:0.45rem;display:flex;justify-content:space-between;font-size:0.85rem">
+              <span style="font-weight:600">Utilidad est.</span>
+              <span style="font-weight:700;color:${util>=0?'var(--green)':'var(--red)'}">${fmt(util)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.78rem">
+              <span style="color:var(--ink-muted)">Margen</span>
+              <span style="color:var(--gold);font-weight:600">${margen.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Render table
+    const allRows = [
+      ...months.map(([m,v]) => ({label:m, ing:v.ing, gas:v.gas, tipo:'real'})),
+      ...projections.map(p => ({label:p.label, ing:p.ing, gas:p.gas, tipo:'estimado'}))
+    ];
+    document.getElementById('forecastTable').innerHTML = allRows.map(r => {
+      const util = r.ing - r.gas;
+      const isProj = r.tipo === 'estimado';
+      return `<tr style="border-bottom:1px solid var(--border);${isProj?'background:var(--surface2);font-style:italic':''}">
+        <td style="padding:0.5rem 0.75rem;font-weight:500">${r.label}</td>
+        <td style="padding:0.5rem 0.75rem;text-align:right;color:var(--green)">${fmt(r.ing)}</td>
+        <td style="padding:0.5rem 0.75rem;text-align:right;color:var(--red)">${fmt(r.gas)}</td>
+        <td style="padding:0.5rem 0.75rem;text-align:right;font-weight:600;color:${util>=0?'var(--green)':'var(--red)'}">${fmt(util)}</td>
+        <td style="padding:0.5rem 0.75rem;text-align:center">
+          <span style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:20px;background:${isProj?'var(--gold-bg)':'var(--green-bg)'};color:${isProj?'var(--gold)':'var(--green)'};font-weight:600">${isProj?'📊 Estimado':'✅ Real'}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Render chart
+    const chartLabels = allRows.map(r => r.label);
+    const chartIng = allRows.map(r => Math.round(r.ing));
+    const chartGas = allRows.map(r => Math.round(r.gas));
+    const isProj = allRows.map(r => r.tipo === 'estimado');
+
+    if (forecastChartInstance) forecastChartInstance.destroy();
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    forecastChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            label: 'Ingresos',
+            data: chartIng,
+            backgroundColor: chartLabels.map((_,i) => isProj[i] ? 'rgba(30,122,69,0.35)' : 'rgba(30,122,69,0.85)'),
+            borderColor: 'rgba(30,122,69,1)',
+            borderWidth: isProj.map(p => p ? 2 : 0),
+            borderDash: [4,4],
+          },
+          {
+            label: 'Gastos',
+            data: chartGas,
+            backgroundColor: chartLabels.map((_,i) => isProj[i] ? 'rgba(192,57,43,0.25)' : 'rgba(192,57,43,0.75)'),
+            borderColor: 'rgba(192,57,43,1)',
+            borderWidth: isProj.map(p => p ? 2 : 0),
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { font: { family: 'Instrument Sans' } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.raw.toLocaleString('es-MX')}` } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: 'Instrument Sans', size: 11 } } },
+          y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { family: 'Instrument Sans', size: 11 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' } }
+        }
+      }
+    });
+
+    document.getElementById('forecastLoading').style.display = 'none';
+    document.getElementById('forecastResult').style.display = 'block';
+    document.getElementById('btnForecast').disabled = false;
+  }, 600);
+}
+
+// ── REPORTE PDF ──────────────────────────────────────────
+function initReportePage() {
+  // Populate year selector
+  const txs = S.transactions;
+  const years = [...new Set(txs.map(t => t.fecha.substring(0,4)))].sort().reverse();
+  const currentYear = new Date().getFullYear().toString();
+  if (!years.includes(currentYear)) years.unshift(currentYear);
+  const sel = document.getElementById('rptAnio');
+  sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  // Set current month
+  const now = new Date();
+  document.getElementById('rptMes').value = String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('rptPeriodo').addEventListener('change', updateRptPreview);
+  updateRptPreview();
+}
+
+function getRptRange() {
+  const periodo = document.getElementById('rptPeriodo').value;
+  const anio = document.getElementById('rptAnio').value;
+  const mes = document.getElementById('rptMes').value;
+  const mesGroup = document.getElementById('rptMesGroup');
+
+  let start, end, label;
+  const m = parseInt(mes), y = parseInt(anio);
+
+  if (periodo === 'mensual') {
+    mesGroup.style.display = 'block';
+    start = `${anio}-${mes}`;
+    end = start;
+    const mNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    label = `${mNames[m]} ${anio}`;
+  } else if (periodo === 'trimestral') {
+    mesGroup.style.display = 'block';
+    const q = Math.ceil(m/3);
+    const qStart = (q-1)*3+1;
+    const qEnd = q*3;
+    start = `${anio}-${String(qStart).padStart(2,'0')}`;
+    end = `${anio}-${String(qEnd).padStart(2,'0')}`;
+    label = `Q${q} ${anio}`;
+  } else if (periodo === 'semestral') {
+    mesGroup.style.display = 'block';
+    const half = m <= 6 ? 1 : 2;
+    start = `${anio}-${half===1?'01':'07'}`;
+    end = `${anio}-${half===1?'06':'12'}`;
+    label = `${half===1?'Primer':'Segundo'} semestre ${anio}`;
+  } else {
+    mesGroup.style.display = 'none';
+    start = `${anio}-01`;
+    end = `${anio}-12`;
+    label = `Año ${anio}`;
+  }
+  return { start, end, label, periodo };
+}
+
+function filterTxsByRange(start, end) {
+  return S.transactions.filter(t => {
+    const ym = t.fecha.substring(0,7);
+    return ym >= start && ym <= end;
+  });
+}
+
+function updateRptPreview() {
+  const { start, end, label } = getRptRange();
+  const txs = filterTxsByRange(start, end);
+  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const util = ing - gas;
+  const margen = ing > 0 ? (util/ing*100) : 0;
+  const biz = S.businesses.find(b=>b.id===S.activeBizId);
+
+  // Monthly breakdown for period
+  const monthly = {};
+  txs.forEach(t => {
+    const ym = t.fecha.substring(0,7);
+    if (!monthly[ym]) monthly[ym] = {ing:0,gas:0};
+    monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+  });
+  const months = Object.entries(monthly).sort();
+
+  document.getElementById('rptPreview').innerHTML = `
+    <div style="background:var(--surface2);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+      <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.75rem">📋 ${biz?.name||'Negocio'} — ${label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:1rem">
+        <div style="background:var(--green-bg);border-radius:8px;padding:0.65rem 0.85rem">
+          <div style="font-size:0.7rem;color:var(--ink-muted)">Ingresos</div>
+          <div style="font-weight:700;color:var(--green)">${fmt(ing)}</div>
+        </div>
+        <div style="background:var(--red-bg);border-radius:8px;padding:0.65rem 0.85rem">
+          <div style="font-size:0.7rem;color:var(--ink-muted)">Gastos</div>
+          <div style="font-weight:700;color:var(--red)">${fmt(gas)}</div>
+        </div>
+        <div style="background:var(--gold-bg);border-radius:8px;padding:0.65rem 0.85rem">
+          <div style="font-size:0.7rem;color:var(--ink-muted)">Utilidad</div>
+          <div style="font-weight:700;color:${util>=0?'var(--green)':'var(--red)'}">${fmt(util)}</div>
+        </div>
+        <div style="background:var(--blue-bg);border-radius:8px;padding:0.65rem 0.85rem">
+          <div style="font-size:0.7rem;color:var(--ink-muted)">Margen</div>
+          <div style="font-weight:700;color:var(--blue)">${margen.toFixed(1)}%</div>
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--ink-muted)">${txs.length} movimientos en el período · ${months.length} meses con actividad</div>
+    </div>
+    <div style="font-size:0.8rem;color:var(--ink-muted);line-height:1.7">
+      ${txs.length === 0 ? '⚠️ No hay movimientos en este período.' : `✅ El PDF incluirá ${txs.length} movimientos del período seleccionado.`}
+    </div>`;
+}
+
+async function generarPDF() {
+  // Wait for jsPDF to load (max 5 seconds)
+  let attempts = 0;
+  while (!window.jspdf?.jsPDF && attempts < 20) {
+    await new Promise(r => setTimeout(r, 250));
+    attempts++;
+  }
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF) return showToast('Error al cargar el generador de PDF. Recarga la página e intenta de nuevo.', 'err');
+
+  const btn = document.getElementById('btnPDF');
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+
+  const { start, end, label, periodo } = getRptRange();
+  const txs = filterTxsByRange(start, end);
+  const biz = S.businesses.find(b=>b.id===S.activeBizId);
+  const para = document.getElementById('rptPara').value.trim();
+  const nota = document.getElementById('rptNota').value.trim();
+
+  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const util = ing - gas;
+  const margen = ing > 0 ? (util/ing*100) : 0;
+
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W = 210, margin = 18;
+  let y = 0;
+
+  // Colors
+  const C = {
+    dark: [28,26,23],
+    green: [30,122,69],
+    red: [192,57,43],
+    gold: [176,125,10],
+    blue: [26,74,138],
+    bg: [248,246,241],
+    border: [226,221,212],
+    muted: [138,130,112],
+    white: [255,255,255],
+  };
+
+  function setColor(c, fill=false) {
+    if (fill) doc.setFillColor(...c);
+    else doc.setTextColor(...c);
+  }
+
+  function rect(x,ry,w,h,c) { doc.setFillColor(...c); doc.rect(x,ry,w,h,'F'); }
+  function line(x1,ry,x2) { doc.setDrawColor(...C.border); doc.setLineWidth(0.3); doc.line(x1,ry,x2,ry); }
+
+  // ── COVER PAGE ──
+  rect(0,0,W,297,C.dark);
+  // Accent stripe
+  rect(0,0,6,297,C.green);
+
+  // Business name
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(28);
+  setColor(C.white);
+  doc.text(biz?.name || 'Mi Negocio', margin+4, 80);
+
+  // Report title
+  doc.setFontSize(14);
+  doc.setFont('helvetica','normal');
+  setColor([180,220,190]);
+  doc.text('REPORTE FINANCIERO', margin+4, 95);
+
+  // Period
+  doc.setFontSize(11);
+  setColor(C.muted);
+  doc.text(label, margin+4, 108);
+
+  // KPI boxes on cover
+  const kpis = [
+    { label:'Ingresos', val:fmt(ing), color:C.green },
+    { label:'Gastos', val:fmt(gas), color:C.red },
+    { label:'Utilidad', val:fmt(util), color:util>=0?C.green:C.red },
+    { label:'Margen', val:margen.toFixed(1)+'%', color:C.gold },
+  ];
+  kpis.forEach((k,i) => {
+    const kx = margin + 4 + (i%2)*88;
+    const ky = 130 + Math.floor(i/2)*28;
+    rect(kx, ky, 82, 22, [40,38,35]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    setColor(C.muted); doc.text(k.label.toUpperCase(), kx+5, ky+8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.setTextColor(...k.color); doc.text(k.val, kx+5, ky+17);
+  });
+
+  // Prepared for
+  if (para) {
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    setColor(C.muted); doc.text('PREPARADO PARA', margin+4, 198);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    setColor(C.white); doc.text(para, margin+4, 206);
+  }
+
+  // Note
+  if (nota) {
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5);
+    setColor(C.muted);
+    const lines = doc.splitTextToSize(nota, W - margin*2 - 8);
+    doc.text(lines, margin+4, 225);
+  }
+
+  // Footer cover
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+  setColor([80,78,75]);
+  doc.text(`Generado el ${new Date().toLocaleDateString('es-MX', {day:'2-digit',month:'long',year:'numeric'})}`, margin+4, 282);
+  doc.text('ContaFácil — Salud Financiera', W-margin-4, 282, {align:'right'});
+
+  // ── CONTENT PAGES ──
+  function addPage() {
+    doc.addPage();
+    y = margin;
+    // Header bar
+    rect(0,0,W,12,[248,246,241]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    setColor(C.muted);
+    doc.text(biz?.name||'Negocio', margin, 8);
+    doc.text(`${label} · ContaFácil`, W-margin, 8, {align:'right'});
+    line(0, 12, W);
+    y = 22;
+  }
+
+  function sectionTitle(title) {
+    if (y > 255) addPage();
+    rect(margin, y, W-margin*2, 8, [240,237,230]);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+    setColor(C.dark); doc.text(title, margin+4, y+5.5);
+    y += 13;
+  }
+
+  function kpiRow(items) {
+    const w = (W - margin*2) / items.length;
+    items.forEach((k,i) => {
+      const kx = margin + i*w;
+      rect(kx, y, w-2, 18, k.bg||[248,246,241]);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      setColor(C.muted); doc.text(k.label, kx+4, y+6);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11);
+      doc.setTextColor(...k.color); doc.text(k.val, kx+4, y+14);
+    });
+    y += 22;
+  }
+
+  // ── SECTION 1: RESUMEN EJECUTIVO ──
+  if (document.getElementById('sec_resumen').checked) {
+    addPage();
+    sectionTitle('1. RESUMEN EJECUTIVO');
+    kpiRow([
+      {label:'INGRESOS TOTALES', val:fmt(ing), color:C.green, bg:[234,245,238]},
+      {label:'GASTOS TOTALES', val:fmt(gas), color:C.red, bg:[253,240,238]},
+      {label:'UTILIDAD BRUTA', val:fmt(util), color:util>=0?C.green:C.red, bg:util>=0?[234,245,238]:[253,240,238]},
+      {label:'MARGEN', val:margen.toFixed(1)+'%', color:C.gold, bg:[253,246,227]},
+    ]);
+    const mesesActivos = Object.keys(txs.reduce((m,t)=>{m[t.fecha.substring(0,7)]=1;return m;},{})).length;
+    const ingTxs = txs.filter(t=>t.tipo==='ingreso');
+    const ticketProm = ingTxs.length>0 ? fmt(ing/ingTxs.length) : '$0';
+    kpiRow([
+      {label:'MOVIMIENTOS', val:txs.length.toString(), color:C.dark},
+      {label:'MESES CON ACTIVIDAD', val:mesesActivos.toString(), color:C.dark},
+      {label:'TICKET PROMEDIO', val:ticketProm, color:C.dark},
+      {label:'PERÍODO', val:label, color:C.blue},
+    ]);
+  }
+
+  // ── SECTION 2: ESTADO DE RESULTADOS ──
+  if (document.getElementById('sec_pl').checked) {
+    if (y > 200) addPage(); else { y += 5; line(margin,y,W-margin); y += 8; }
+    sectionTitle('2. ESTADO DE RESULTADOS');
+
+    const cats = {};
+    txs.forEach(t => {
+      if (!cats[t.tipo]) cats[t.tipo] = {};
+      const k = t.categoria||'otro';
+      cats[t.tipo][k] = (cats[t.tipo][k]||0) + t.monto;
+    });
+
+    const plRows = [];
+    plRows.push([{content:'INGRESOS', colSpan:3, styles:{fillColor:C.green, textColor:C.white, fontStyle:'bold', fontSize:8}}]);
+    Object.entries(cats.ingreso||{}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+      plRows.push([CAT_LABELS[k]||k, fmt(v), ing>0?(v/ing*100).toFixed(1)+'%':'—']);
+    });
+    plRows.push([{content:'Total Ingresos', styles:{fontStyle:'bold'}}, {content:fmt(ing), styles:{fontStyle:'bold', textColor:C.green}}, '100%']);
+    plRows.push([{content:'COSTOS Y GASTOS', colSpan:3, styles:{fillColor:C.red, textColor:C.white, fontStyle:'bold', fontSize:8}}]);
+    Object.entries(cats.gasto||{}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+      plRows.push([CAT_LABELS[k]||k, `(${fmt(v)})`, ing>0?(v/ing*100).toFixed(1)+'%':'—']);
+    });
+    plRows.push([{content:'Total Gastos', styles:{fontStyle:'bold'}}, {content:`(${fmt(gas)})`, styles:{fontStyle:'bold', textColor:C.red}}, ing>0?(gas/ing*100).toFixed(1)+'%':'—']);
+    plRows.push([{content:'UTILIDAD BRUTA', styles:{fontStyle:'bold', fillColor:[240,237,230]}}, {content:fmt(util), styles:{fontStyle:'bold', textColor:util>=0?C.green:C.red, fillColor:[240,237,230]}}, {content:margen.toFixed(1)+'%', styles:{fontStyle:'bold', fillColor:[240,237,230]}}]);
+
+    doc.autoTable({
+      head: [['Concepto','Importe','% Ingresos']],
+      body: plRows,
+      startY: y,
+      margin: {left:margin, right:margin},
+      styles: {fontSize:8.5, cellPadding:2.5, font:'helvetica'},
+      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
+      columnStyles: {1:{halign:'right'}, 2:{halign:'right', cellWidth:22}},
+      theme:'grid',
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── SECTION 3: ANÁLISIS POR CATEGORÍA ──
+  if (document.getElementById('sec_cats').checked) {
+    if (y > 200) addPage(); else { y += 3; }
+    sectionTitle('3. ANÁLISIS POR CATEGORÍA DE GASTO');
+    const cats = {};
+    txs.filter(t=>t.tipo==='gasto').forEach(t => {
+      const k = t.categoria||'otro';
+      cats[k] = (cats[k]||0) + t.monto;
+    });
+    const catRows = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v]) => { const pct1=gas>0?(v/gas*100).toFixed(1)+'%':'0%'; const pct2=gas>0?(v/gas*100).toFixed(0)+'%':'0%'; return [CAT_LABELS[k]||k, fmt(v), pct1, pct2]; });
+    doc.autoTable({
+      head: [['Categoría','Importe','% del total','Participación']],
+      body: catRows,
+      startY: y,
+      margin: {left:margin, right:margin},
+      styles: {fontSize:8.5, cellPadding:2.5},
+      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
+      columnStyles: {1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'center'}},
+      theme:'striped',
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── SECTION 4: COMPARATIVO MENSUAL ──
+  if (document.getElementById('sec_mensual').checked) {
+    addPage();
+    sectionTitle('4. COMPARATIVO MENSUAL');
+    const monthly = {};
+    txs.forEach(t => {
+      const ym = t.fecha.substring(0,7);
+      if (!monthly[ym]) monthly[ym] = {ing:0,gas:0};
+      monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+    });
+    const mNames = {
+      '01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
+      '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'
+    };
+    const monthRows = Object.entries(monthly).sort().map(([m,v]) => {
+      const u = v.ing - v.gas;
+      const mg = v.ing>0?(u/v.ing*100):0;
+      return [
+        `${mNames[m.split('-')[1]]||m} ${m.split('-')[0]}`,
+        fmt(v.ing), fmt(v.gas), fmt(u), mg.toFixed(1)+'%'
+      ];
+    });
+    // Totals row
+    monthRows.push([{content:'TOTAL',styles:{fontStyle:'bold'}}, {content:fmt(ing),styles:{fontStyle:'bold',textColor:C.green}}, {content:fmt(gas),styles:{fontStyle:'bold',textColor:C.red}}, {content:fmt(util),styles:{fontStyle:'bold',textColor:util>=0?C.green:C.red}}, {content:margen.toFixed(1)+'%',styles:{fontStyle:'bold'}}]);
+
+    doc.autoTable({
+      head: [['Mes','Ingresos','Gastos','Utilidad','Margen']],
+      body: monthRows,
+      startY: y,
+      margin: {left:margin, right:margin},
+      styles: {fontSize:8.5, cellPadding:2.5},
+      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
+      columnStyles: {1:{halign:'right',textColor:C.green}, 2:{halign:'right',textColor:C.red}, 3:{halign:'right'}, 4:{halign:'right'}},
+      theme:'striped',
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── SECTION 5: FORECAST ──
+  if (document.getElementById('sec_forecast').checked) {
+    if (y > 200) addPage(); else { y += 3; }
+    sectionTitle('5. FORECAST — PRÓXIMOS 3 MESES');
+
+    // Calculate forecast
+    const allTxs = S.transactions;
+    const allMonthly = {};
+    allTxs.forEach(t => {
+      const ym = t.fecha.substring(0,7);
+      if (!allMonthly[ym]) allMonthly[ym] = {ing:0,gas:0};
+      allMonthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+    });
+    const allMonths = Object.entries(allMonthly).sort();
+    const ALPHA = 0.4;
+    function expGrowth(vals) {
+      if (vals.length<2) return 0;
+      const rates = [];
+      for (let i=1;i<vals.length;i++) rates.push(vals[i-1]>0?(vals[i]-vals[i-1])/vals[i-1]:0);
+      let s = rates[0];
+      for (let i=1;i<rates.length;i++) s = ALPHA*rates[i]+(1-ALPHA)*s;
+      return Math.max(-0.3,Math.min(0.3,s));
+    }
+    const aIng = allMonths.map(([,v])=>v.ing);
+    const aGas = allMonths.map(([,v])=>v.gas);
+    const iG = expGrowth(aIng), gG = expGrowth(aGas);
+    const lastI = aIng[aIng.length-1]||0, lastG = aGas[aGas.length-1]||0;
+    const lastMStr = allMonths[allMonths.length-1]?.[0]||`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const [lY,lM] = lastMStr.split('-').map(Number);
+    const fcRows = [];
+    for (let i=1;i<=3;i++) {
+      let m=lM+i, yr=lY; if(m>12){m-=12;yr++;}
+      const lbl=`${yr}-${String(m).padStart(2,'0')}`;
+      const pi=lastI*Math.pow(1+iG,i), pg=lastG*Math.pow(1+gG,i);
+      const pu=pi-pg, pm=pi>0?(pu/pi*100):0;
+      fcRows.push([lbl, fmt(Math.max(0,pi)), fmt(Math.max(0,pg)), fmt(pu), pm.toFixed(1)+'%', {content:'Estimado', styles:{textColor:C.gold, fontStyle:'italic'}}]);
+    }
+    doc.autoTable({
+      head: [['Mes','Ingresos est.','Gastos est.','Utilidad est.','Margen est.','Tipo']],
+      body: fcRows,
+      startY: y,
+      margin: {left:margin, right:margin},
+      styles: {fontSize:8.5, cellPadding:2.5, fillColor:[253,246,227]},
+      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
+      columnStyles: {1:{halign:'right',textColor:C.green}, 2:{halign:'right',textColor:C.red}, 3:{halign:'right'}, 4:{halign:'right'}, 5:{halign:'center'}},
+      theme:'grid',
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Disclaimer
+    doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
+    setColor(C.muted);
+    doc.text('* El forecast es una proyección basada en tendencias históricas usando suavización exponencial (α=0.4). No constituye una garantía de resultados futuros.', margin, y, {maxWidth: W-margin*2});
+  }
+
+  // ── LAST PAGE FOOTER ──
+  const pageCount = doc.getNumberOfPages();
+  for (let i=1; i<=pageCount; i++) {
+    doc.setPage(i);
+    if (i > 1) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      setColor(C.muted);
+      doc.text(`Página ${i} de ${pageCount}`, W/2, 290, {align:'center'});
+      line(margin, 285, W-margin);
+    }
+  }
+
+  // Save
+  const fname = `reporte_${(biz?.name||'negocio').replace(/\s+/g,'_')}_${label.replace(/\s+/g,'_')}.pdf`;
+  doc.save(fname);
+
+  btn.disabled = false; btn.textContent = '📄 Generar y descargar PDF';
+  showToast('✅ PDF descargado', 'ok');
+}
+
+// ── SIMULADOR DE INVERSIÓN ──────────────────────────────────────────
+function simularInversion() {
+  const monto = parseFloat(document.getElementById('invMonto').value);
+  const mes = parseInt(document.getElementById('invMes').value);
+  const crecEsperado = parseFloat(document.getElementById('invCrecimiento').value) / 100;
+
+  if (!monto || monto <= 0) return showToast('Ingresa el monto de inversión', 'err');
+  if (isNaN(crecEsperado) || crecEsperado <= 0) return showToast('Ingresa el crecimiento esperado en ingresos (%)', 'err');
+
+  const fd = window._forecastData;
+  if (!fd) return showToast('Primero genera el forecast', 'err');
+
+  const { months, ingGrowth, gasGrowth, ingValues } = fd;
+  const lastIng = ingValues[ingValues.length - 1];
+  const lastGas = fd.gasValues[fd.gasValues.length - 1];
+  const lastMonthStr = months[months.length - 1][0];
+  const [lastYear, lastMon] = lastMonthStr.split('-').map(Number);
+
+  // Build 3 scenarios: conservador (historial), moderado (punto medio), optimista (esperado)
+  const scenarios = [
+    { nombre: '📉 Conservador', desc: 'Tu tendencia actual sin inversión', growthExtra: 0, color: '#457b9d', bgColor: 'var(--blue-bg)' },
+    { nombre: '📊 Moderado', desc: 'Punto medio entre tendencia y tu expectativa', growthExtra: crecEsperado / 2, color: '#b07d0a', bgColor: 'var(--gold-bg)' },
+    { nombre: '📈 Optimista', desc: `Tu expectativa de +${(crecEsperado*100).toFixed(0)}% en ingresos`, growthExtra: crecEsperado, color: '#1e7a45', bgColor: 'var(--green-bg)' },
+  ];
+
+  // Sanity check — if expectation is far from history, show warning
+  const histGrowthPct = (ingGrowth * 100).toFixed(1);
+  const espPct = (crecEsperado * 100).toFixed(0);
+  const farFromHistory = crecEsperado > ingGrowth * 3 && crecEsperado > 0.15;
+
+  let html = '';
+
+  if (farFromHistory) {
+    html += `<div style="background:var(--gold-bg);border:1.5px solid #f0d890;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;font-size:0.8rem;line-height:1.6">
+      ⚠️ <strong>Tu expectativa (${espPct}%) es muy superior a tu crecimiento histórico (${histGrowthPct}%).</strong> 
+      Esto puede ser posible con una buena inversión, pero es importante tenerlo en cuenta. 
+      Los 3 escenarios abajo te muestran el rango realista.
+    </div>`;
+  }
+
+  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.85rem;margin-bottom:1rem">`;
+
+  scenarios.forEach(sc => {
+    let totalUtil = 0;
+    for (let i = 1; i <= 3; i++) {
+      const projIng = lastIng * Math.pow(1 + ingGrowth + (i >= mes ? sc.growthExtra : 0), i);
+      const extraGas = i === mes ? monto : 0;
+      const projGas = lastGas * Math.pow(1 + gasGrowth, i) + extraGas;
+      totalUtil += projIng - projGas;
+    }
+    const roi = monto > 0 ? ((totalUtil / monto - 1) * 100) : 0;
+
+    // Month by month
+    const rows = [];
+    for (let i = 1; i <= 3; i++) {
+      let m = lastMon + i, y = lastYear;
+      if (m > 12) { m -= 12; y++; }
+      const label = `${y}-${String(m).padStart(2,'0')}`;
+      const projIng = lastIng * Math.pow(1 + ingGrowth + (i >= mes ? sc.growthExtra : 0), i);
+      const extraGas = i === mes ? monto : 0;
+      const projGas = lastGas * Math.pow(1 + gasGrowth, i) + extraGas;
+      const util = projIng - projGas;
+      rows.push({ label, ing: projIng, gas: projGas, util });
+    }
+
+    html += `<div style="background:${sc.bgColor};border:1.5px solid rgba(0,0,0,0.08);border-radius:12px;padding:1rem">
+      <div style="font-weight:700;font-size:0.88rem;color:${sc.color};margin-bottom:0.25rem">${sc.nombre}</div>
+      <div style="font-size:0.72rem;color:var(--ink-muted);margin-bottom:0.85rem">${sc.desc}</div>
+      ${rows.map(r => `
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.3rem">
+          <span style="color:var(--ink-muted)">${r.label}</span>
+          <span style="font-weight:600;color:${r.util>=0?'var(--green)':'var(--red)'}">${fmt(r.util)}</span>
+        </div>`).join('')}
+      <div style="border-top:1px solid rgba(0,0,0,0.1);margin-top:0.6rem;padding-top:0.6rem;display:flex;justify-content:space-between;font-size:0.78rem">
+        <span style="font-weight:600">Utilidad 3 meses</span>
+        <span style="font-weight:700;color:${totalUtil>=0?'var(--green)':'var(--red)'}">${fmt(totalUtil)}</span>
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  html += `<div style="font-size:0.75rem;color:var(--ink-muted);text-align:center">La inversión de ${fmt(monto)} se aplica como gasto en el mes seleccionado. Los ingresos adicionales se proyectan a partir de ese mes.</div>`;
+
+  document.getElementById('invResult').style.display = 'block';
+  document.getElementById('invResult').innerHTML = html;
+}
 
 init();
 </script>
