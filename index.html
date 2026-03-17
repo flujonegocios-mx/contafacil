@@ -182,6 +182,10 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .pl-table { width:100%; border-collapse:collapse; }
 .pl-table th { text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-muted); padding:0.75rem 1.25rem; background:var(--surface2); border-bottom:1px solid var(--border); }
 .pl-table th:not(:first-child) { text-align:right; }
+.pl-delta { display:inline-flex; align-items:center; gap:2px; font-size:0.72rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:5px; white-space:nowrap; }
+.pl-delta.up { background:var(--green-bg); color:var(--green); }
+.pl-delta.down { background:var(--red-bg); color:var(--red); }
+.pl-delta.neu { background:var(--surface2); color:var(--ink-muted); }
 .pl-table td { padding:0.65rem 1.25rem; font-size:0.85rem; border-bottom:1px solid rgba(226,221,212,0.5); }
 .pl-table td:not(:first-child) { text-align:right; }
 .pl-table tr:hover td { background:var(--surface2); }
@@ -421,7 +425,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     <div class="page" id="page-pl">
       <div class="topbar"><div><div class="page-title">Estado de Resultados</div><div class="page-subtitle" id="plSubtitle">Lo que va del año</div></div></div>
       <div class="month-pills" id="monthPills"></div>
-      <div class="pl-container"><table class="pl-table"><thead><tr><th>Concepto</th><th>Monto</th><th>% Ingreso</th></tr></thead><tbody id="plBody"></tbody></table></div>
+      <div class="pl-container"><table class="pl-table"><thead><tr><th>Concepto</th><th>Monto</th><th>% Ingreso</th><th id="plCmpHeader" style="white-space:nowrap">vs anterior</th></tr></thead><tbody id="plBody"></tbody></table></div>
     </div>
 
     <!-- Historial -->
@@ -1403,34 +1407,95 @@ function togglePlMes(ym) {
   renderPL();
 }
 
+// ── P&L COMPARISON HELPERS ──────────────────────────────────────
+
+// Given a list of YM strings, return the "same-length previous period" YM list
+function getPrevPeriodMonths(selectedMonths) {
+  if (!selectedMonths.length) return [];
+  const sorted = [...selectedMonths].sort();
+  const n = sorted.length;
+  // Shift each month back by n months
+  return sorted.map(ym => {
+    const [y, m] = ym.split('-').map(Number);
+    let pm = m - n, py = y;
+    while (pm <= 0) { pm += 12; py--; }
+    return `${py}-${String(pm).padStart(2,'0')}`;
+  });
+}
+
+function buildCatMap(txs) {
+  const map = {};
+  txs.forEach(t => { const k = t.categoria||'otro'; map[k]=(map[k]||0)+t.monto; });
+  return map;
+}
+
+function deltaHtml(current, prev, invert=false) {
+  if (!prev || prev === 0) return '<td></td>';
+  const pct = ((current - prev) / prev * 100);
+  const abs = Math.abs(pct).toFixed(1);
+  const arrowUp = `<svg width="9" height="10" viewBox="0 0 9 10" fill="none"><line x1="4.5" y1="9" x2="4.5" y2="1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><polyline points="1.5,4.5 4.5,1.5 7.5,4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const arrowDown = `<svg width="9" height="10" viewBox="0 0 9 10" fill="none"><line x1="4.5" y1="1" x2="4.5" y2="8.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><polyline points="1.5,5.5 4.5,8.5 7.5,5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (pct > 0.5) {
+    const cls = invert ? 'down' : 'up';
+    return `<td><span class="pl-delta ${cls}">${arrowUp} ${abs}%</span></td>`;
+  }
+  if (pct < -0.5) {
+    const cls = invert ? 'up' : 'down';
+    return `<td><span class="pl-delta ${cls}">${arrowDown} ${abs}%</span></td>`;
+  }
+  return `<td><span class="pl-delta neu">— 0%</span></td>`;
+}
+
 function renderPL() {
   const now = new Date();
   const thisYear = now.getFullYear().toString();
 
   // All months in data, sorted newest first
   const monthSet = new Set(S.transactions.map(t => t.fecha.substring(0,7)));
-  const months = [...monthSet].sort().reverse();
+  const allMonths = [...monthSet].sort().reverse();
 
-  // If no selection, default to "lo que va del año" (all months of current year)
-  const anySelected = S.plMeses.size > 0;
-  const isYTD = !anySelected;
+  const isYTD = S.plMeses.size === 0;
 
-  // Build pills row
+  // Current period months list
+  let curMonths;
+  if (isYTD) {
+    curMonths = allMonths.filter(m => m.startsWith(thisYear));
+  } else {
+    curMonths = [...S.plMeses].sort();
+  }
+
+  // Previous comparison period months
+  const prevMonths = getPrevPeriodMonths(curMonths);
+  const prevSet = new Set(prevMonths);
+  const hasPrevData = S.transactions.some(t => prevSet.has(t.fecha.substring(0,7)));
+
+  // Update comparison header label
+  const hdr = document.getElementById('plCmpHeader');
+  if (hdr) {
+    if (!hasPrevData) {
+      hdr.textContent = '';
+    } else if (isYTD) {
+      hdr.textContent = `vs ene–${now.toLocaleDateString('es-MX',{month:'short'})} ${now.getFullYear()-1}`;
+    } else if (curMonths.length === 1) {
+      hdr.textContent = `vs ${fmtMonthLabel(prevMonths[0])}`;
+    } else {
+      hdr.textContent = `vs ${fmtMonthLabel(prevMonths[0])}–${fmtMonthLabel(prevMonths[prevMonths.length-1])}`;
+    }
+  }
+
+  // Build pills
   const pillsContainer = document.getElementById('monthPills');
   pillsContainer.innerHTML = `
-    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">
       <div class="month-pill ${isYTD ? 'active' : ''}" onclick="S.plMeses=new Set();renderPL()">Lo que va del año</div>
-      <div style="width:1px;height:18px;background:var(--border);margin:0 0.1rem"></div>
-      ${months.map(m => `<div class="month-pill ${S.plMeses.has(m)?'active':''}" onclick="togglePlMes('${m}')">${fmtMonthLabel(m)}</div>`).join('')}
+      <div style="width:1px;height:18px;background:var(--border);margin:0 0.1rem;flex-shrink:0"></div>
+      ${allMonths.map(m => `<div class="month-pill ${S.plMeses.has(m)?'active':''}" onclick="togglePlMes('${m}')">${fmtMonthLabel(m)}</div>`).join('')}
     </div>`;
 
-  // Determine which transactions to include
-  let filtered;
-  if (isYTD) {
-    filtered = S.transactions.filter(t => t.fecha.startsWith(thisYear));
-  } else {
-    filtered = S.transactions.filter(t => S.plMeses.has(t.fecha.substring(0,7)));
-  }
+  // Filtered transactions
+  const curSet = new Set(curMonths);
+  const filtered = S.transactions.filter(t => curSet.has(t.fecha.substring(0,7)));
+  const prevFiltered = S.transactions.filter(t => prevSet.has(t.fecha.substring(0,7)));
 
   // Update subtitle
   const subtitle = document.getElementById('plSubtitle');
@@ -1442,41 +1507,79 @@ function renderPL() {
       subtitle.textContent = `Período: ${fmtMonthLabel(ym)}`;
     } else {
       const sorted = [...S.plMeses].sort();
-      subtitle.textContent = `${S.plMeses.size} meses seleccionados · ${fmtMonthLabel(sorted[0])} – ${fmtMonthLabel(sorted[sorted.length-1])}`;
+      subtitle.textContent = `${S.plMeses.size} meses · ${fmtMonthLabel(sorted[0])} – ${fmtMonthLabel(sorted[sorted.length-1])}`;
     }
   }
 
+  // Current period totals
   const ingTxs = filtered.filter(t=>t.tipo==='ingreso');
   const gasTxs = filtered.filter(t=>t.tipo==='gasto');
   const totalIng = ingTxs.reduce((s,t)=>s+t.monto,0);
   const totalGas = gasTxs.reduce((s,t)=>s+t.monto,0);
   const util = totalIng - totalGas;
+  const ingMap = buildCatMap(ingTxs);
+  const gasMap = buildCatMap(gasTxs);
 
-  const gasMap={}; gasTxs.forEach(t=>{const k=t.categoria||'otro'; gasMap[k]=(gasMap[k]||0)+t.monto;});
-  const ingMap={}; ingTxs.forEach(t=>{const k=t.categoria||'ventas'; ingMap[k]=(ingMap[k]||0)+t.monto;});
+  // Previous period totals
+  const pIngTxs = prevFiltered.filter(t=>t.tipo==='ingreso');
+  const pGasTxs = prevFiltered.filter(t=>t.tipo==='gasto');
+  const pTotalIng = pIngTxs.reduce((s,t)=>s+t.monto,0);
+  const pTotalGas = pGasTxs.reduce((s,t)=>s+t.monto,0);
+  const pUtil = pTotalIng - pTotalGas;
+  const pIngMap = buildCatMap(pIngTxs);
+  const pGasMap = buildCatMap(pGasTxs);
 
-  let html='';
+  const C = 4; // colspan for empty rows
+  let html = '';
+
   if (!filtered.length) {
-    html = `<tr><td colspan="3" style="text-align:center;padding:2.5rem;color:var(--ink-muted)">Sin movimientos en el período seleccionado</td></tr>`;
+    html = `<tr><td colspan="${C}" style="text-align:center;padding:2.5rem;color:var(--ink-muted)" colspan="4">Sin movimientos en el período seleccionado</td></tr>`;
   } else {
-    html += `<tr class="pl-section"><td colspan="3">INGRESOS</td></tr>`;
-    Object.entries(ingMap).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
-      html+=`<tr><td>${CAT_LABELS[k]||k}</td><td class="text-green">${fmt(v)}</td><td>${totalIng>0?((v/totalIng)*100).toFixed(1)+'%':'—'}</td></tr>`;
+    // INGRESOS section
+    html += `<tr class="pl-section"><td colspan="${C}">INGRESOS</td></tr>`;
+    Object.entries(ingMap).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+      html += `<tr>
+        <td>${CAT_LABELS[k]||k}</td>
+        <td class="text-green">${fmt(v)}</td>
+        <td>${totalIng>0?((v/totalIng)*100).toFixed(1)+'%':'—'}</td>
+        ${hasPrevData ? deltaHtml(v, pIngMap[k]||0) : '<td></td>'}
+      </tr>`;
     });
-    html += `<tr class="pl-subtotal"><td><strong>Total Ingresos</strong></td><td class="text-green"><strong>${fmt(totalIng)}</strong></td><td>100%</td></tr>`;
-    html += `<tr class="pl-section"><td colspan="3">COSTOS Y GASTOS</td></tr>`;
-    Object.entries(gasMap).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
-      html+=`<tr><td>${CAT_LABELS[k]||k}</td><td class="text-red">(${fmt(v)})</td><td>${totalIng>0?((v/totalIng)*100).toFixed(1)+'%':'—'}</td></tr>`;
+    html += `<tr class="pl-subtotal">
+      <td><strong>Total Ingresos</strong></td>
+      <td class="text-green"><strong>${fmt(totalIng)}</strong></td>
+      <td>100%</td>
+      ${hasPrevData ? deltaHtml(totalIng, pTotalIng) : '<td></td>'}
+    </tr>`;
+
+    // GASTOS section
+    html += `<tr class="pl-section"><td colspan="${C}">COSTOS Y GASTOS</td></tr>`;
+    Object.entries(gasMap).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+      html += `<tr>
+        <td>${CAT_LABELS[k]||k}</td>
+        <td class="text-red">(${fmt(v)})</td>
+        <td>${totalIng>0?((v/totalIng)*100).toFixed(1)+'%':'—'}</td>
+        ${hasPrevData ? deltaHtml(v, pGasMap[k]||0, true) : '<td></td>'}
+      </tr>`;
     });
-    html += `<tr class="pl-subtotal"><td><strong>Total Gastos</strong></td><td class="text-red"><strong>(${fmt(totalGas)})</strong></td><td>${totalIng>0?((totalGas/totalIng)*100).toFixed(1)+'%':'—'}</td></tr>`;
+    html += `<tr class="pl-subtotal">
+      <td><strong>Total Gastos</strong></td>
+      <td class="text-red"><strong>(${fmt(totalGas)})</strong></td>
+      <td>${totalIng>0?((totalGas/totalIng)*100).toFixed(1)+'%':'—'}</td>
+      ${hasPrevData ? deltaHtml(totalGas, pTotalGas, true) : '<td></td>'}
+    </tr>`;
+
+    // UTILIDAD BRUTA
     const utilClass = util>=0?'text-green':'text-red';
     const margen = totalIng>0?((util/totalIng)*100).toFixed(1)+'%':'—';
     html += `<tr class="pl-net" style="background:${util>=0?'var(--green-bg)':'var(--red-bg)'}">
-      <td style="font-size:0.95rem">UTILIDAD BRUTA</td>
+      <td>UTILIDAD BRUTA</td>
       <td class="${utilClass}">${fmt(util)}</td>
       <td class="${utilClass}">${margen}</td>
+      ${hasPrevData ? deltaHtml(util, pUtil) : '<td></td>'}
     </tr>`;
   }
+
   document.getElementById('plBody').innerHTML = html;
 }
 
