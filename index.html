@@ -398,11 +398,14 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub">Últimos 6 meses</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
         <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución del período</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
       </div>
-      <!-- Top 3 gastos -->
+      <!-- Resumen financiero rápido -->
       <div style="margin-bottom:1.25rem" id="insightRow">
         <div class="card">
-          <div class="card-title" style="margin-bottom:0.2rem">Top gastos del período</div>
-          <div class="card-sub" style="margin-bottom:1rem">Las 3 categorías donde más se gasta</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.2rem">
+            <div class="card-title">Desglose del período</div>
+            <div id="top3RatioLabel" style="font-size:0.72rem;color:var(--ink-muted)"></div>
+          </div>
+          <div class="card-sub" style="margin-bottom:1rem">De cada $100 de ingreso, ¿cuánto va a cada gasto?</div>
           <div id="top3List"></div>
         </div>
       </div>
@@ -416,7 +419,14 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
             </div>
             <button onclick="openTxModal()" style="padding:0.45rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer">+ Registrar</button>
           </div>
-          <div class="tx-list" id="recentList"><div class="empty"><div class="empty-icon">📝</div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div></div>
+          <div id="recentList"></div>
+          <div id="recentMore" style="display:none;margin-top:0.5rem">
+            <div id="recentMoreList"></div>
+          </div>
+          <div id="recentFooter" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <button id="recentToggleBtn" onclick="toggleMoreRecent()" style="font-size:0.78rem;color:var(--accent);background:none;border:none;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-weight:600;padding:0"></button>
+            <button onclick="goToHistorial()" style="font-size:0.78rem;color:var(--ink-muted);background:none;border:none;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-weight:500;padding:0">Ver todos los movimientos →</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1331,21 +1341,47 @@ function renderTrend(elId, current, previous) {
 }
 
 function renderTop3(filtered) {
+  const totalIng = filtered.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const totalGas = filtered.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
   const catMap={};
   filtered.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'otro'; catMap[k]=(catMap[k]||0)+t.monto;});
-  const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const el = document.getElementById('top3List');
+  const ratioLabel = document.getElementById('top3RatioLabel');
   if(!el) return;
-  if(!sorted.length) { el.innerHTML=`<div style="color:var(--ink-muted);font-size:0.82rem;padding:0.75rem 0">Sin gastos en este período</div>`; return; }
-  const max = sorted[0][1];
-  el.innerHTML = sorted.map(([cat,val],i)=>`
-    <div class="top3-item">
-      <div class="top3-rank">${i+1}</div>
+
+  if(!sorted.length) {
+    el.innerHTML=`<div style="color:var(--ink-muted);font-size:0.82rem;padding:0.75rem 0">Sin gastos en este período</div>`;
+    if(ratioLabel) ratioLabel.textContent='';
+    return;
+  }
+
+  // Ratio label: cents of gas per dollar of ing
+  if(ratioLabel && totalIng > 0) {
+    const ratio = (totalGas/totalIng*100).toFixed(1);
+    const color = ratio < 60 ? 'var(--green)' : ratio < 85 ? 'var(--gold)' : 'var(--red)';
+    ratioLabel.innerHTML = `Gastas <strong style="color:${color}">${ratio}¢</strong> por cada $1 de ingreso`;
+  }
+
+  // Show all categories as ratio per $100 of income
+  const base = totalIng > 0 ? totalIng : totalGas;
+  el.innerHTML = sorted.map(([cat,val])=>{
+    const pctOfIng = base > 0 ? (val/base*100) : 0;
+    const pctOfGas = totalGas > 0 ? (val/totalGas*100) : 0;
+    const color = pctOfIng > 30 ? 'var(--red)' : pctOfIng > 15 ? 'var(--gold)' : 'var(--ink-muted)';
+    return `<div class="top3-item">
       <div class="top3-bar-wrap">
-        <div class="top3-label"><span>${CAT_LABELS[cat]||cat}</span><span style="color:var(--red);font-weight:700">${fmt(val)}</span></div>
-        <div class="top3-bar-bg"><div class="top3-bar-fill" style="width:${((val/max)*100).toFixed(1)}%;opacity:${0.9-i*0.2}"></div></div>
+        <div class="top3-label">
+          <span>${CAT_LABELS[cat]||cat}</span>
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="font-size:0.7rem;color:var(--ink-muted)">${pctOfGas.toFixed(1)}% del gasto</span>
+            <span style="color:${color};font-weight:700">${fmt(val)}</span>
+          </div>
+        </div>
+        <div class="top3-bar-bg"><div class="top3-bar-fill" style="width:${Math.min(pctOfIng,100).toFixed(1)}%;background:${color};opacity:0.8"></div></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // renderMeta replaced by renderCircles()
@@ -1378,6 +1414,8 @@ function renderDashboard() {
 }
 
 function renderCharts() {
+  // Bar chart always shows last 6 months relative to the latest data point — not filtered by period
+  // so the user sees the trend. But we only include months that exist in the data.
   const monthly={};
   S.transactions.forEach(t=>{ const ym=t.fecha.substring(0,7); if(!monthly[ym])monthly[ym]={ing:0,gas:0}; monthly[ym][t.tipo==='ingreso'?'ing':'gas']+=t.monto; });
   const months=Object.keys(monthly).sort().slice(-6);
@@ -1388,17 +1426,67 @@ function renderCharts() {
   const ingData=months.map(m=>monthly[m].ing>0?Math.max(monthly[m].ing,minBar):0);
   const gasData=months.map(m=>monthly[m].gas>0?Math.max(monthly[m].gas,minBar):0);
   barChart=new Chart(document.getElementById('barChart').getContext('2d'),{type:'bar',data:{labels:months.length?months.map(fmtMonthLabel):['Sin datos'],datasets:[{label:'Ingresos',data:ingData,backgroundColor:'rgba(30,122,69,0.78)',borderRadius:6,borderSkipped:false},{label:'Gastos',data:gasData,backgroundColor:'rgba(192,57,43,0.72)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:(c,i)=>{const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex]; return ` ${fmt(real)}`;}}}},scales:{x:{grid:{display:false},ticks:{color:'#8a8270',font:{size:11}}},y:{beginAtZero:true,suggestedMax:maxVal*1.15,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8a8270',font:{size:11},callback:v=>{if(v>=1000000)return '$'+( v/1000000).toFixed(1)+'M'; if(v>=1000)return '$'+(v/1000).toFixed(0)+'k'; return '$'+v;}}}}}});
+  // Pie chart uses current period filter so it matches the KPIs
+  const _pieFiltered=getFiltered();
   const catMap={};
-  S.transactions.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'otro';catMap[k]=(catMap[k]||0)+t.monto;});
+  _pieFiltered.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'outro';catMap[k]=(catMap[k]||0)+t.monto;});
   const cats=Object.keys(catMap);
   if(pieChart)pieChart.destroy();
   pieChart=new Chart(document.getElementById('pieChart').getContext('2d'),{type:'doughnut',data:{labels:cats.length?cats.map(c=>CAT_LABELS[c]||c):['Sin gastos'],datasets:[{data:cats.length?cats.map(c=>catMap[c]):[1],backgroundColor:PALETTE.map(c=>c+'cc'),borderColor:PALETTE,borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#8a8270',font:{size:10},padding:8,boxWidth:8}},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}}}}});
 }
 
+let _recentShowMore = false;
+
+function txItemHtml(t) {
+  return `<div class="tx-item"><div class="tx-dot" style="background:${t.tipo==='ingreso'?'var(--green)':'var(--red)'}"></div><div class="tx-info"><div class="tx-concepto">${t.concepto}</div><div class="tx-meta">${fmtDate(t.fecha)} · ${CAT_LABELS[t.categoria]||t.categoria||t.tipo}</div></div><div class="tx-amount ${t.tipo}">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</div><button class="tx-del" onclick="deleteTransaction('${t.id}')">✕</button></div>`;
+}
+
 function renderRecent(filtered) {
-  const recent=[...filtered].slice(0,15);
-  document.getElementById('recentCount').textContent=`${filtered.length} registros`;
-  document.getElementById('recentList').innerHTML=recent.length?recent.map(t=>`<div class="tx-item"><div class="tx-dot" style="background:${t.tipo==='ingreso'?'var(--green)':'var(--red)'}"></div><div class="tx-info"><div class="tx-concepto">${t.concepto}</div><div class="tx-meta">${fmtDate(t.fecha)} · ${CAT_LABELS[t.categoria]||t.categoria||t.tipo}</div></div><div class="tx-amount ${t.tipo}">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</div><button class="tx-del" onclick="deleteTransaction('${t.id}')">✕</button></div>`).join(''):`<div class="empty"><div class="empty-icon">📝</div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div>`;
+  _recentShowMore = false;
+  const list = filtered.slice(0, 10); // max 10 total
+  const first5 = list.slice(0, 5);
+  const next5  = list.slice(5, 10);
+
+  document.getElementById('recentCount').textContent = `${filtered.length} registros`;
+
+  const recentList = document.getElementById('recentList');
+  const moreList   = document.getElementById('recentMoreList');
+  const moreWrap   = document.getElementById('recentMore');
+  const footer     = document.getElementById('recentFooter');
+  const toggleBtn  = document.getElementById('recentToggleBtn');
+
+  if (!first5.length) {
+    recentList.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div>`;
+    if(footer) footer.style.display = 'none';
+    if(moreWrap) moreWrap.style.display = 'none';
+    return;
+  }
+
+  recentList.innerHTML = first5.map(txItemHtml).join('');
+
+  if (next5.length) {
+    moreList.innerHTML = next5.map(txItemHtml).join('');
+    moreWrap.style.display = 'none';
+    footer.style.display = 'flex';
+    toggleBtn.textContent = `Ver ${next5.length} más`;
+  } else {
+    if(moreWrap) moreWrap.style.display = 'none';
+    footer.style.display = filtered.length > 0 ? 'flex' : 'none';
+    if(toggleBtn) toggleBtn.style.display = 'none';
+  }
+}
+
+function toggleMoreRecent() {
+  _recentShowMore = !_recentShowMore;
+  const moreWrap = document.getElementById('recentMore');
+  const toggleBtn = document.getElementById('recentToggleBtn');
+  if (moreWrap) moreWrap.style.display = _recentShowMore ? 'block' : 'none';
+  if (toggleBtn) toggleBtn.textContent = _recentShowMore ? 'Ver menos' : 'Ver más';
+}
+
+function goToHistorial() {
+  const btn = document.querySelector('.nav-item[onclick*="historial"]');
+  if(btn) { showPage('historial', btn); btn.classList.add('active'); }
 }
 
 function togglePlMes(ym) {
