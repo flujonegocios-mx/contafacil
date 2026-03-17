@@ -1440,13 +1440,26 @@ function renderCharts(filtered) {
     });
   } else if(S.period === 'mes') {
     // Single month — show bars by week (semana 1-4)
+    // Get the actual year/month of the filtered period
+    const _refDate = filtered.length ? new Date(filtered[0].fecha+'T12:00:00') : now;
+    const _yr = _refDate.getFullYear();
+    const _mo = _refDate.getMonth(); // 0-indexed
+    const daysInMonth = new Date(_yr, _mo+1, 0).getDate();
+    // Week ranges: 1-7, 8-15, 16-23, 24-end
+    const weekRanges = [
+      [1, 7],
+      [8, 15],
+      [16, 23],
+      [24, daysInMonth]
+    ];
+    const shortMon = new Date(_yr, _mo, 1).toLocaleDateString('es-MX',{month:'short'});
+    const wLabels = weekRanges.map(([s,e]) => `${s}–${e} ${shortMon}`);
     const weekMap = {1:{ing:0,gas:0},2:{ing:0,gas:0},3:{ing:0,gas:0},4:{ing:0,gas:0}};
     filtered.forEach(t => {
       const day = new Date(t.fecha+'T12:00:00').getDate();
-      const week = Math.min(Math.ceil(day/7), 4);
+      const week = day<=7?1:day<=15?2:day<=23?3:4;
       weekMap[week][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
     });
-    const wLabels = ['Sem 1','Sem 2','Sem 3','Sem 4'];
     const wIng = [1,2,3,4].map(w=>weekMap[w].ing);
     const wGas = [1,2,3,4].map(w=>weekMap[w].gas);
     const maxVal = Math.max(...wIng, ...wGas, 1);
@@ -1517,11 +1530,6 @@ function txItemHtml(t) {
 }
 
 function renderRecent(filtered) {
-  _recentShowMore = false;
-  const list = filtered.slice(0, 10); // max 10 total
-  const first5 = list.slice(0, 5);
-  const next5  = list.slice(5, 10);
-
   document.getElementById('recentCount').textContent = `${filtered.length} registros`;
 
   const recentList = document.getElementById('recentList');
@@ -1530,33 +1538,48 @@ function renderRecent(filtered) {
   const footer     = document.getElementById('recentFooter');
   const toggleBtn  = document.getElementById('recentToggleBtn');
 
-  if (!first5.length) {
+  if (!filtered.length) {
     recentList.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div>`;
     if(footer) footer.style.display = 'none';
     if(moreWrap) moreWrap.style.display = 'none';
     return;
   }
 
+  const first5 = filtered.slice(0, 5);
+  const next5  = filtered.slice(5, 10);
+  const hasMore10 = filtered.length > 10; // more than 10 → force historial
+
+  // Always show first 5
   recentList.innerHTML = first5.map(txItemHtml).join('');
 
+  // Second block of 5 — hidden by default, shown on scroll/click
   if (next5.length) {
     moreList.innerHTML = next5.map(txItemHtml).join('');
     moreWrap.style.display = 'none';
     footer.style.display = 'flex';
+    toggleBtn.style.display = 'inline';
     toggleBtn.textContent = `Ver ${next5.length} más`;
+    toggleBtn.dataset.expanded = 'false';
   } else {
     if(moreWrap) moreWrap.style.display = 'none';
-    footer.style.display = filtered.length > 0 ? 'flex' : 'none';
     if(toggleBtn) toggleBtn.style.display = 'none';
+    footer.style.display = 'flex';
   }
 }
 
 function toggleMoreRecent() {
-  _recentShowMore = !_recentShowMore;
-  const moreWrap = document.getElementById('recentMore');
+  const moreWrap  = document.getElementById('recentMore');
   const toggleBtn = document.getElementById('recentToggleBtn');
-  if (moreWrap) moreWrap.style.display = _recentShowMore ? 'block' : 'none';
-  if (toggleBtn) toggleBtn.textContent = _recentShowMore ? 'Ver menos' : 'Ver más';
+  const expanded  = toggleBtn.dataset.expanded === 'true';
+  if (!expanded) {
+    moreWrap.style.display = 'block';
+    toggleBtn.textContent = 'Ver menos';
+    toggleBtn.dataset.expanded = 'true';
+  } else {
+    moreWrap.style.display = 'none';
+    toggleBtn.textContent = 'Ver más';
+    toggleBtn.dataset.expanded = 'false';
+  }
 }
 
 function goToHistorial() {
