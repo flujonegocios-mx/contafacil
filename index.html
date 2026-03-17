@@ -334,10 +334,17 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           <div class="page-title" id="dashTitle">Dashboard</div>
           <div class="page-subtitle" id="dashSub">Resumen financiero</div>
         </div>
-        <div class="period-selector">
-          <button class="period-btn active" onclick="setPeriod('mes',this)">Este mes</button>
-          <button class="period-btn" onclick="setPeriod('trim',this)">Trimestre</button>
-          <button class="period-btn" onclick="setPeriod('año',this)">Año</button>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <button onclick="openObjetivosModal()" id="btnObjetivos" style="display:flex;align-items:center;gap:0.5rem;padding:0.42rem 1rem;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" opacity=".5"/><circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="7" r="0.8" fill="currentColor"/></svg>
+            Objetivos
+            <span id="objetivosBadge" style="display:none;width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0"></span>
+          </button>
+          <div class="period-selector">
+            <button class="period-btn active" onclick="setPeriod('mes',this)">Este mes</button>
+            <button class="period-btn" onclick="setPeriod('trim',this)">Trimestre</button>
+            <button class="period-btn" onclick="setPeriod('año',this)">Año</button>
+          </div>
         </div>
       </div>
       <div class="kpi-row">
@@ -369,22 +376,12 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub">Últimos 6 meses</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
         <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución del período</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
       </div>
-      <!-- Top 3 gastos + Meta de ingresos -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem" id="insightRow">
-        <!-- Top 3 gastos -->
+      <!-- Top 3 gastos -->
+      <div style="margin-bottom:1.25rem" id="insightRow">
         <div class="card">
           <div class="card-title" style="margin-bottom:0.2rem">Top gastos del período</div>
           <div class="card-sub" style="margin-bottom:1rem">Las 3 categorías donde más se gasta</div>
           <div id="top3List"></div>
-        </div>
-        <!-- Meta de ingresos -->
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.2rem">
-            <div class="card-title">Meta de ingresos</div>
-            <button onclick="openMetaModal()" style="font-size:0.72rem;color:var(--accent);background:none;border:none;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-weight:600;padding:0">Editar</button>
-          </div>
-          <div class="card-sub" style="margin-bottom:1rem" id="metaSub">Define una meta mensual</div>
-          <div id="metaContent"></div>
         </div>
       </div>
       <div class="bottom-row">
@@ -759,6 +756,79 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 <button class="fab" onclick="openTxModal()" title="Registrar movimiento">+</button>
 
 <!-- Transaction Modal -->
+<!-- Objetivos Modal -->
+<div class="modal-overlay" id="objetivosModal">
+  <div class="modal" style="max-width:500px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h3 style="margin:0">Objetivos del período</h3>
+      <button onclick="closeObjetivosModal()" style="background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:1.2rem;line-height:1;padding:0.2rem">✕</button>
+    </div>
+
+    <!-- Two circles side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.75rem">
+
+      <!-- Ingresos circle -->
+      <div style="text-align:center">
+        <div style="position:relative;width:130px;height:130px;margin:0 auto 0.85rem">
+          <svg width="130" height="130" viewBox="0 0 130 130" style="transform:rotate(-90deg)">
+            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+            <circle id="circleIngStroke" cx="65" cy="65" r="54" fill="none" stroke="var(--green)" stroke-width="10"
+              stroke-linecap="round"
+              stroke-dasharray="339.3"
+              stroke-dashoffset="339.3"
+              style="transition:stroke-dashoffset 0.8s ease, stroke 0.4s ease"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div id="circleIngPct" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--green)">0%</div>
+            <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);font-weight:700">Ingresos</div>
+          </div>
+        </div>
+        <div id="circleIngLabel" style="font-size:0.78rem;color:var(--ink-muted);line-height:1.5"></div>
+      </div>
+
+      <!-- Gastos circle -->
+      <div style="text-align:center">
+        <div style="position:relative;width:130px;height:130px;margin:0 auto 0.85rem">
+          <svg width="130" height="130" viewBox="0 0 130 130" style="transform:rotate(-90deg)">
+            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+            <circle id="circleGasStroke" cx="65" cy="65" r="54" fill="none" stroke="var(--green)" stroke-width="10"
+              stroke-linecap="round"
+              stroke-dasharray="339.3"
+              stroke-dashoffset="339.3"
+              style="transition:stroke-dashoffset 0.8s ease, stroke 0.4s ease"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div id="circleGasPct" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--green)">0%</div>
+            <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);font-weight:700">Gastos</div>
+          </div>
+        </div>
+        <div id="circleGasLabel" style="font-size:0.78rem;color:var(--ink-muted);line-height:1.5"></div>
+      </div>
+
+    </div>
+
+    <!-- Edit goals -->
+    <div style="background:var(--surface2);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem">
+      <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--ink-muted)">Definir objetivos mensuales</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div>
+          <label style="font-size:0.72rem;color:var(--ink-muted);display:block;margin-bottom:0.3rem;font-weight:600">Meta de ingresos ($)</label>
+          <input type="number" id="inputMetaIng" placeholder="Ej: 50000" min="0"
+            style="width:100%;padding:0.55rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none;transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:var(--ink-muted);display:block;margin-bottom:0.3rem;font-weight:600">Límite de gastos ($)</label>
+          <input type="number" id="inputMetaGas" placeholder="Ej: 30000" min="0"
+            style="width:100%;padding:0.55rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none;transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+      </div>
+      <button onclick="guardarObjetivos()" style="width:100%;padding:0.65rem;background:var(--ink);color:#fff;border:none;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#2d2a25'" onmouseout="this.style.background='var(--ink)'">Guardar objetivos</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="txModal">
   <div class="modal tx-modal">
     <h3>Registrar movimiento</h3>
@@ -989,26 +1059,92 @@ function fmtDate(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-MX',
 function fmtMonthLabel(ym) { const [y,m]=ym.split('-'); return new Date(y,m-1).toLocaleDateString('es-MX',{month:'short',year:'2-digit'}); }
 
 // ── META STATE ──
-let S_meta = { monto: 0 }; // persisted in localStorage key 'cf_meta_<bizId>'
+// ── OBJETIVOS STATE ──
+let S_obj = { ing: 0, gas: 0 };
 
-function loadMeta() {
+function loadObjetivos() {
   if(!S.activeBizId) return;
-  try { const saved = localStorage.getItem('cf_meta_'+S.activeBizId); S_meta = saved ? JSON.parse(saved) : {monto:0}; } catch(e) { S_meta={monto:0}; }
+  try { const saved = localStorage.getItem('cf_obj_'+S.activeBizId); S_obj = saved ? JSON.parse(saved) : {ing:0,gas:0}; } catch(e) { S_obj={ing:0,gas:0}; }
 }
-function saveMeta(monto) {
-  S_meta = {monto};
-  try { localStorage.setItem('cf_meta_'+S.activeBizId, JSON.stringify(S_meta)); } catch(e){}
+function saveObjetivos(ing, gas) {
+  S_obj = {ing, gas};
+  try { localStorage.setItem('cf_obj_'+S.activeBizId, JSON.stringify(S_obj)); } catch(e){}
 }
 
-function openMetaModal() {
-  const cur = S_meta.monto || '';
-  const val = prompt('¿Cuál es tu meta de ingresos para este mes?\nIngresa el monto en pesos (sin signos):', cur||'');
-  if(val === null) return;
-  const n = parseFloat(val.replace(/[^0-9.]/g,''));
-  if(isNaN(n) || n <= 0) return showToast('Ingresa un monto válido', 'err');
-  saveMeta(n);
-  renderDashboard();
-  showToast('✅ Meta guardada', 'ok');
+function openObjetivosModal() {
+  loadObjetivos();
+  document.getElementById('inputMetaIng').value = S_obj.ing || '';
+  document.getElementById('inputMetaGas').value = S_obj.gas || '';
+  document.getElementById('objetivosModal').classList.add('show');
+  // Trigger circle render with current dashboard values
+  setTimeout(renderCircles, 80);
+}
+function closeObjetivosModal() {
+  document.getElementById('objetivosModal').classList.remove('show');
+}
+
+function guardarObjetivos() {
+  const ing = parseFloat(document.getElementById('inputMetaIng').value) || 0;
+  const gas = parseFloat(document.getElementById('inputMetaGas').value) || 0;
+  saveObjetivos(ing, gas);
+  renderCircles();
+  updateObjetivosBadge();
+  showToast('✅ Objetivos guardados', 'ok');
+}
+
+function updateObjetivosBadge() {
+  loadObjetivos();
+  const badge = document.getElementById('objetivosBadge');
+  if(badge) badge.style.display = (S_obj.ing || S_obj.gas) ? 'inline-block' : 'none';
+}
+
+function renderCircles() {
+  loadObjetivos();
+  const filtered = getFiltered();
+  const ing = filtered.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = filtered.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const CIRC = 339.3; // 2 * PI * 54
+
+  // Ingresos circle — verde si alcanzas, rojo si no
+  const ingStroke = document.getElementById('circleIngStroke');
+  const ingPctEl = document.getElementById('circleIngPct');
+  const ingLabelEl = document.getElementById('circleIngLabel');
+  if(ingStroke && S_obj.ing > 0) {
+    const pct = Math.min(ing / S_obj.ing, 1);
+    const pctDisplay = (ing / S_obj.ing * 100).toFixed(1);
+    const color = pct >= 1 ? 'var(--green)' : pct >= 0.6 ? 'var(--gold)' : 'var(--red)';
+    ingStroke.style.strokeDashoffset = (CIRC * (1 - pct)).toFixed(2);
+    ingStroke.style.stroke = color;
+    ingPctEl.textContent = pctDisplay + '%';
+    ingPctEl.style.color = color;
+    const falta = S_obj.ing - ing;
+    ingLabelEl.innerHTML = `<strong style="color:var(--ink)">${fmt(ing)}</strong><br>de ${fmt(S_obj.ing)}<br>${falta > 0 ? '<span style="color:var(--ink-muted)">Faltan ' + fmt(falta) + '</span>' : '<span style="color:var(--green);font-weight:700">🎉 Meta alcanzada</span>'}`;
+  } else if(ingStroke) {
+    ingStroke.style.strokeDashoffset = CIRC;
+    ingPctEl.textContent = '—';
+    ingLabelEl.innerHTML = '<span style="color:var(--ink-muted)">Sin meta definida</span>';
+  }
+
+  // Gastos circle — verde si estás bajo el límite, rojo si lo superas
+  const gasStroke = document.getElementById('circleGasStroke');
+  const gasPctEl = document.getElementById('circleGasPct');
+  const gasLabelEl = document.getElementById('circleGasLabel');
+  if(gasStroke && S_obj.gas > 0) {
+    const pct = Math.min(gas / S_obj.gas, 1);
+    const pctDisplay = (gas / S_obj.gas * 100).toFixed(1);
+    // Lógica inversa: verde = bajo límite, rojo = sobrepasado
+    const color = pct >= 1 ? 'var(--red)' : pct >= 0.8 ? 'var(--gold)' : 'var(--green)';
+    gasStroke.style.strokeDashoffset = (CIRC * (1 - pct)).toFixed(2);
+    gasStroke.style.stroke = color;
+    gasPctEl.textContent = pctDisplay + '%';
+    gasPctEl.style.color = color;
+    const exceso = gas - S_obj.gas;
+    gasLabelEl.innerHTML = `<strong style="color:var(--ink)">${fmt(gas)}</strong><br>de ${fmt(S_obj.gas)}<br>${exceso > 0 ? '<span style="color:var(--red);font-weight:700">⚠️ Excedido ' + fmt(exceso) + '</span>' : '<span style="color:var(--green)">Dentro del límite</span>'}`;
+  } else if(gasStroke) {
+    gasStroke.style.strokeDashoffset = CIRC;
+    gasPctEl.textContent = '—';
+    gasLabelEl.innerHTML = '<span style="color:var(--ink-muted)">Sin límite definido</span>';
+  }
 }
 
 function getPrevPeriodTotals() {
@@ -1075,33 +1211,7 @@ function renderTop3(filtered) {
     </div>`).join('');
 }
 
-function renderMeta(ing) {
-  const el = document.getElementById('metaContent');
-  const sub = document.getElementById('metaSub');
-  if(!el) return;
-  loadMeta();
-  const meta = S_meta.monto;
-  if(!meta) {
-    el.innerHTML=`<div class="meta-empty">Sin meta definida<button onclick="openMetaModal()">+ Definir meta</button></div>`;
-    if(sub) sub.textContent = 'Define una meta mensual';
-    return;
-  }
-  const pct = Math.min((ing/meta)*100, 100);
-  const pctDisplay = ((ing/meta)*100).toFixed(1);
-  const faltante = meta - ing;
-  const color = pct>=100 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
-  if(sub) sub.textContent = S.period==='mes' ? 'Meta del mes actual' : 'Meta de ingresos';
-  el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.1rem">
-      <span style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${color}">${fmt(ing)}</span>
-      <span style="font-size:0.78rem;color:var(--ink-muted)">de ${fmt(meta)}</span>
-    </div>
-    <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${color}"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:0.73rem;color:var(--ink-muted)">
-      <span style="font-weight:700;color:${color}">${pctDisplay}% completado</span>
-      <span>${faltante>0?`Faltan ${fmt(faltante)}`:'🎉 Meta alcanzada'}</span>
-    </div>`;
-}
+// renderMeta replaced by renderCircles()
 
 function renderDashboard() {
   const biz = S.businesses.find(b=>b.id===S.activeBizId);
@@ -1126,7 +1236,7 @@ function renderDashboard() {
   renderTrend('kpiUtilTrend', util, prev.util);
   // Insights
   renderTop3(filtered);
-  renderMeta(ing);
+  updateObjetivosBadge();
   renderCharts(); renderRecent(filtered);
 }
 
