@@ -45,7 +45,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .auth-screen.show { display:flex; }
 .auth-card { background:var(--surface); border-radius:20px; padding:2.5rem; width:100%; max-width:420px; box-shadow:0 24px 80px rgba(0,0,0,0.3); animation:fadeUp 0.5s ease; }
 .auth-logo { text-align:center; margin-bottom:2rem; }
-.auth-logo-icon { width:56px; height:56px; background:var(--green-bg); border-radius:14px; display:inline-flex; align-items:center; justify-content:center; font-size:1.6rem; margin-bottom:0.75rem; }
+.auth-logo-icon { width:56px; height:56px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:0.75rem; }
 .auth-logo h1 { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
 .auth-logo h1 span { color:var(--accent); }
 .auth-logo p { color:var(--ink-muted); font-size:0.85rem; margin-top:0.3rem; }
@@ -78,7 +78,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 
 .sidebar { width:260px; background:var(--sidebar-bg); padding:1.5rem 1.25rem; display:flex; flex-direction:column; gap:1.5rem; position:fixed; height:100vh; overflow-y:auto; z-index:20; }
 .sidebar-logo { display:flex; align-items:center; gap:0.7rem; padding-bottom:1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); }
-.sidebar-logo-icon { width:34px; height:34px; background:var(--green-bg); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+.sidebar-logo-icon { width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
 .sidebar-logo-text { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; color:#fff; }
 .sidebar-logo-text span { color:#4ade80; }
 
@@ -105,13 +105,14 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 
 .main { margin-left:260px; flex:1; padding:2rem 2.5rem; max-width:calc(100vw - 260px); }
 .page { display:none; }
-.page.active { display:block; animation:fadeUp 0.3s ease; }
+.page.active { display:block; }
 
 .topbar { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; }
 .page-title { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
 .page-subtitle { color:var(--ink-muted); font-size:0.82rem; margin-top:0.2rem; }
 .period-selector { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-.period-btn { padding:0.4rem 0.85rem; border:none; background:none; font-family:'Instrument Sans',sans-serif; font-size:0.78rem; color:var(--ink-muted); cursor:pointer; transition:all 0.15s; }
+.period-btn { padding:0.4rem 0.85rem; border:none; background:none; font-family:'Instrument Sans',sans-serif; font-size:0.78rem; color:var(--ink-muted); cursor:pointer; transition:all 0.2s; }
+.period-btn.active { background:var(--ink); color:#fff; font-weight:600; border-radius:6px; }
 .period-btn.active { background:var(--ink); color:#fff; font-weight:600; }
 
 .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
@@ -166,7 +167,8 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .tx-list { display:flex; flex-direction:column; gap:0.4rem; max-height:320px; overflow-y:auto; }
 .tx-list::-webkit-scrollbar { width:4px; }
 .tx-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.tx-item { display:flex; align-items:center; gap:0.75rem; padding:0.7rem 0.9rem; background:var(--surface2); border-radius:8px; transition:background 0.12s; }
+.tx-item { display:flex; align-items:center; gap:0.75rem; padding:0.7rem 0.9rem; background:var(--surface2); border-radius:8px; transition:background 0.12s, transform 0.12s, box-shadow 0.12s; border-left:2px solid transparent; }
+.tx-item:hover { background:#e8e4db; transform:translateX(2px); border-left-color:var(--accent); }
 .tx-item:hover { background:#ede9e0; }
 .tx-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .tx-info { flex:1; min-width:0; }
@@ -199,13 +201,13 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .month-pill.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
 
 .empty { text-align:center; padding:3rem 1.5rem; color:var(--ink-muted); }
-.empty-icon { font-size:2.5rem; margin-bottom:0.75rem; }
+.empty-icon { margin-bottom:1rem; display:flex; align-items:center; justify-content:center; opacity:0.7; }
 .empty h4 { font-family:'Syne',sans-serif; color:var(--ink); margin-bottom:0.4rem; }
 .empty p { font-size:0.82rem; max-width:280px; margin:0 auto; line-height:1.5; }
 
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; display:none; align-items:center; justify-content:center; padding:1rem; }
 .modal-overlay.show { display:flex; }
-.modal { background:var(--surface); border-radius:16px; padding:2rem; width:100%; max-width:380px; animation:fadeUp 0.25s ease; }
+.modal { background:var(--surface); border-radius:16px; padding:2rem; width:100%; max-width:380px; animation:scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1); }
 .modal h3 { font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:800; margin-bottom:1.25rem; }
 .modal-actions { display:flex; gap:0.6rem; margin-top:1.25rem; }
 .btn-outline { padding:0.65rem 1rem; border:1.5px solid var(--border); border-radius:8px; background:none; font-family:'Instrument Sans',sans-serif; font-size:0.85rem; cursor:pointer; color:var(--ink-muted); }
@@ -229,6 +231,41 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .toast.err { background:var(--red); }
 
 @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+@keyframes scaleIn { from{opacity:0;transform:scale(0.97)} to{opacity:1;transform:scale(1)} }
+
+/* Staggered children animation */
+.page.active > * { animation: pageFadeUp 0.35s ease both; }
+.page.active > *:nth-child(1) { animation-delay: 0s; }
+.page.active > *:nth-child(2) { animation-delay: 0.06s; }
+.page.active > *:nth-child(3) { animation-delay: 0.11s; }
+.page.active > *:nth-child(4) { animation-delay: 0.15s; }
+.page.active > *:nth-child(5) { animation-delay: 0.18s; }
+.page.active > *:nth-child(6) { animation-delay: 0.21s; }
+@keyframes pageFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* KPI cards stagger */
+.kpi-row .kpi-card { animation: pageFadeUp 0.4s ease both; }
+.kpi-row .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-row .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+.kpi-row .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-row .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* Nav item hover slide */
+.nav-item { transition: background 0.15s, color 0.15s, transform 0.12s; }
+.nav-item:hover { transform: translateX(2px); }
+.nav-item.active { transform: none; }
+
+/* Card hover lift */
+.card { transition: box-shadow 0.2s ease, transform 0.2s ease; }
+.card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); transform: translateY(-1px); }
+
+/* Button press */
+.btn-submit:active, .btn-primary:active { transform: scale(0.98); }
+
+/* Biz item hover */
+.biz-item { transition: background 0.15s, transform 0.12s; }
+.biz-item:hover { transform: translateX(2px); }
 @media(max-width:960px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .charts-row{grid-template-columns:1fr} .bottom-row{grid-template-columns:1fr} }
 @media(max-width:700px){ .sidebar{display:none} .main{margin-left:0;max-width:100vw;padding:1rem} }
 </style>
@@ -236,15 +273,26 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 <body>
 
 <div class="loading-screen" id="loadingScreen">
-  <div class="loading-logo">Conta<span>Fácil</span></div>
-  <div class="spinner"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:1.5rem">
+    <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:scaleIn 0.5s ease">
+      <rect width="32" height="32" rx="9" fill="#2d6a4f"/>
+      <path d="M20.5 10H13C11.3 10 10 11.3 10 13v6c0 1.7 1.3 3 3 3h7.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <path d="M10 16h7" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="loading-logo" style="animation:fadeUp 0.5s ease 0.15s both">Conta<span>Fácil</span></div>
+    <div class="spinner" style="animation:none;border-top-color:#4ade80;opacity:0.7"></div>
+  </div>
 </div>
 
 <!-- Auth — solo login, sin registro -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="auth-logo-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="14" width="6" height="12" rx="1.5" fill="var(--accent)"/><rect x="11" y="8" width="6" height="18" rx="1.5" fill="var(--accent)" opacity=".7"/><rect x="20" y="2" width="6" height="24" rx="1.5" fill="var(--accent)" opacity=".45"/></svg></div>
+      <div class="auth-logo-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="9" fill="var(--accent)"/>
+  <path d="M20.5 10H13C11.3 10 10 11.3 10 13v6c0 1.7 1.3 3 3 3h7.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10 16h7" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg></div>
       <h1>Conta<span>Fácil</span></h1>
       <p>Inicia sesión con tu cuenta</p>
     </div>
@@ -276,7 +324,11 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 <div class="app" id="appScreen">
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="sidebar-logo-icon"><svg width="18" height="18" viewBox="0 0 28 28" fill="none"><rect x="2" y="14" width="6" height="12" rx="1.5" fill="#2d6a4f"/><rect x="11" y="8" width="6" height="18" rx="1.5" fill="#2d6a4f" opacity=".75"/><rect x="20" y="2" width="6" height="24" rx="1.5" fill="#2d6a4f" opacity=".5"/></svg></div>
+      <div class="sidebar-logo-icon"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="8" fill="#2d6a4f"/>
+  <path d="M20.5 10H13C11.3 10 10 11.3 10 13v6c0 1.7 1.3 3 3 3h7.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10 16h7" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg></div>
       <div class="sidebar-logo-text">Conta<span>Fácil</span></div>
     </div>
     <div class="sidebar-user">
@@ -1621,7 +1673,12 @@ function renderRecent(filtered) {
   const toggleBtn  = document.getElementById('recentToggleBtn');
 
   if (!filtered.length) {
-    recentList.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div>`;
+    recentList.innerHTML = `<div class="empty"><div class="empty-icon"><svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="12" y="8" width="40" height="48" rx="6" fill="var(--surface2)" stroke="var(--border)" stroke-width="1.5"/>
+  <path d="M20 22h24M20 30h16M20 38h10" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="48" cy="48" r="10" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+  <path d="M48 44v4l2 2" stroke="var(--ink-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg></div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div>`;
     if(footer) footer.style.display = 'none';
     if(moreWrap) moreWrap.style.display = 'none';
     return;
@@ -1902,7 +1959,11 @@ function renderHistorial() {
   document.getElementById('histSub').textContent = `${all.length} movimiento${all.length!==1?'s':''}`;
   const list = document.getElementById('histList');
   if(!all.length) {
-    list.innerHTML = `<div class="empty" style="padding:3rem"><div class="empty-icon">🧾</div><h4>Sin movimientos</h4><p>Ajusta los filtros o registra tu primer movimiento</p></div>`;
+    list.innerHTML = `<div class="empty" style="padding:3rem"><div class="empty-icon"><svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="20" fill="var(--surface2)" stroke="var(--border)" stroke-width="1.5"/>
+  <path d="M32 20v12l7 4" stroke="var(--ink-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 32c0-9.9 8.1-18 18-18" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+</svg></div><h4>Sin movimientos</h4><p>Ajusta los filtros o registra tu primer movimiento</p></div>`;
     return;
   }
   list.innerHTML = all.map(t => `
@@ -3167,7 +3228,13 @@ function renderObjetivosPage() {
   if(!container) return;
   const months = getAllObjMonths();
   if(!months.length) {
-    container.innerHTML = `<div class="empty" style="padding:4rem"><div class="empty-icon">🎯</div><h4>Sin objetivos registrados</h4><p>Abre el botón "Objetivos" en el dashboard y define tus metas mensuales.</p></div>`;
+    container.innerHTML = `<div class="empty" style="padding:4rem"><div class="empty-icon"><svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="20" fill="var(--surface2)" stroke="var(--border)" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="12" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <circle cx="32" cy="32" r="4" fill="var(--accent)" opacity="0.4"/>
+  <path d="M44 20l-8 8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M44 20h-5M44 20v5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg></div><h4>Sin objetivos registrados</h4><p>Abre el botón "Objetivos" en el dashboard y define tus metas mensuales.</p></div>`;
     return;
   }
   let html = '<div style="display:flex;flex-direction:column;gap:1rem">';
