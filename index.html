@@ -353,12 +353,30 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           <div class="kpi-value text-green" id="kpiIng">$0</div>
           <div class="kpi-sub" id="kpiIngSub">en el período</div>
           <div class="kpi-trend" id="kpiIngTrend"></div>
+          <div id="kpiIngMeta" style="margin-top:0.5rem;display:none">
+            <div style="display:flex;justify-content:space-between;font-size:0.67rem;color:var(--ink-muted);margin-bottom:3px">
+              <span id="kpiIngMetaLabel"></span>
+              <span id="kpiIngMetaPct" style="font-weight:700"></span>
+            </div>
+            <div style="background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
+              <div id="kpiIngMetaBar" style="height:4px;border-radius:99px;transition:width .6s ease;background:var(--green)"></div>
+            </div>
+          </div>
         </div>
         <div class="kpi-card" style="border-left-color:var(--red)">
           <div class="kpi-top"><div class="kpi-label">Gastos</div></div>
           <div class="kpi-value text-red" id="kpiGas">$0</div>
           <div class="kpi-sub">en el período</div>
           <div class="kpi-trend" id="kpiGasTrend"></div>
+          <div id="kpiGasMeta" style="margin-top:0.5rem;display:none">
+            <div style="display:flex;justify-content:space-between;font-size:0.67rem;color:var(--ink-muted);margin-bottom:3px">
+              <span id="kpiGasMetaLabel"></span>
+              <span id="kpiGasMetaPct" style="font-weight:700"></span>
+            </div>
+            <div style="background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
+              <div id="kpiGasMetaBar" style="height:4px;border-radius:99px;transition:width .6s ease;background:var(--red)"></div>
+            </div>
+          </div>
         </div>
         <div class="kpi-card" style="border-left-color:var(--gold)">
           <div class="kpi-top"><div class="kpi-label">Utilidad Bruta</div></div>
@@ -765,44 +783,44 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     </div>
 
     <!-- Two circles side by side -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.75rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:1.75rem">
 
       <!-- Ingresos circle -->
       <div style="text-align:center">
-        <div style="position:relative;width:130px;height:130px;margin:0 auto 0.85rem">
-          <svg width="130" height="130" viewBox="0 0 130 130" style="transform:rotate(-90deg)">
-            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--surface2)" stroke-width="10"/>
-            <circle id="circleIngStroke" cx="65" cy="65" r="54" fill="none" stroke="var(--green)" stroke-width="10"
+        <div style="position:relative;width:160px;height:160px;margin:0 auto 1rem">
+          <svg width="160" height="160" viewBox="0 0 160 160" style="transform:rotate(-90deg)">
+            <circle cx="80" cy="80" r="66" fill="none" stroke="var(--surface2)" stroke-width="12"/>
+            <circle id="circleIngStroke" cx="80" cy="80" r="66" fill="none" stroke="var(--green)" stroke-width="12"
               stroke-linecap="round"
-              stroke-dasharray="339.3"
-              stroke-dashoffset="339.3"
+              stroke-dasharray="414.7"
+              stroke-dashoffset="414.7"
               style="transition:stroke-dashoffset 0.8s ease, stroke 0.4s ease"/>
           </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <div id="circleIngPct" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--green)">0%</div>
-            <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);font-weight:700">Ingresos</div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+            <div id="circleIngPct" style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);line-height:1">0%</div>
+            <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);font-weight:700;margin-top:2px">Ingresos</div>
           </div>
         </div>
-        <div id="circleIngLabel" style="font-size:0.78rem;color:var(--ink-muted);line-height:1.5"></div>
+        <div id="circleIngLabel" style="font-size:0.78rem;color:var(--ink-muted);line-height:1.6"></div>
       </div>
 
       <!-- Gastos circle -->
       <div style="text-align:center">
-        <div style="position:relative;width:130px;height:130px;margin:0 auto 0.85rem">
-          <svg width="130" height="130" viewBox="0 0 130 130" style="transform:rotate(-90deg)">
-            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--surface2)" stroke-width="10"/>
-            <circle id="circleGasStroke" cx="65" cy="65" r="54" fill="none" stroke="var(--green)" stroke-width="10"
+        <div style="position:relative;width:160px;height:160px;margin:0 auto 1rem">
+          <svg width="160" height="160" viewBox="0 0 160 160" style="transform:rotate(-90deg)">
+            <circle cx="80" cy="80" r="66" fill="none" stroke="var(--surface2)" stroke-width="12"/>
+            <circle id="circleGasStroke" cx="80" cy="80" r="66" fill="none" stroke="var(--green)" stroke-width="12"
               stroke-linecap="round"
-              stroke-dasharray="339.3"
-              stroke-dashoffset="339.3"
+              stroke-dasharray="414.7"
+              stroke-dashoffset="414.7"
               style="transition:stroke-dashoffset 0.8s ease, stroke 0.4s ease"/>
           </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <div id="circleGasPct" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--green)">0%</div>
-            <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);font-weight:700">Gastos</div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+            <div id="circleGasPct" style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);line-height:1">0%</div>
+            <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);font-weight:700;margin-top:2px">Gastos</div>
           </div>
         </div>
-        <div id="circleGasLabel" style="font-size:0.78rem;color:var(--ink-muted);line-height:1.5"></div>
+        <div id="circleGasLabel" style="font-size:0.78rem;color:var(--ink-muted);line-height:1.6"></div>
       </div>
 
     </div>
@@ -1096,6 +1114,43 @@ function updateObjetivosBadge() {
   loadObjetivos();
   const badge = document.getElementById('objetivosBadge');
   if(badge) badge.style.display = (S_obj.ing || S_obj.gas) ? 'inline-block' : 'none';
+
+  // Mini progress bars inside KPI cards
+  const filtered = getFiltered();
+  const ing = filtered.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = filtered.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+
+  const ingWrap = document.getElementById('kpiIngMeta');
+  if(ingWrap) {
+    if(S_obj.ing > 0) {
+      const pct = Math.min((ing/S_obj.ing)*100, 100);
+      const color = pct>=100 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
+      document.getElementById('kpiIngMetaLabel').textContent = `Objetivo: ${fmt(S_obj.ing)}`;
+      document.getElementById('kpiIngMetaPct').textContent = pct.toFixed(0)+'%';
+      document.getElementById('kpiIngMetaPct').style.color = color;
+      document.getElementById('kpiIngMetaBar').style.width = pct+'%';
+      document.getElementById('kpiIngMetaBar').style.background = color;
+      ingWrap.style.display = 'block';
+    } else {
+      ingWrap.style.display = 'none';
+    }
+  }
+
+  const gasWrap = document.getElementById('kpiGasMeta');
+  if(gasWrap) {
+    if(S_obj.gas > 0) {
+      const pct = Math.min((gas/S_obj.gas)*100, 100);
+      const color = pct>=100 ? 'var(--red)' : pct>=80 ? 'var(--gold)' : 'var(--green)';
+      document.getElementById('kpiGasMetaLabel').textContent = `Límite: ${fmt(S_obj.gas)}`;
+      document.getElementById('kpiGasMetaPct').textContent = pct.toFixed(0)+'%';
+      document.getElementById('kpiGasMetaPct').style.color = color;
+      document.getElementById('kpiGasMetaBar').style.width = pct+'%';
+      document.getElementById('kpiGasMetaBar').style.background = color;
+      gasWrap.style.display = 'block';
+    } else {
+      gasWrap.style.display = 'none';
+    }
+  }
 }
 
 function renderCircles() {
@@ -1103,7 +1158,7 @@ function renderCircles() {
   const filtered = getFiltered();
   const ing = filtered.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
   const gas = filtered.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
-  const CIRC = 339.3; // 2 * PI * 54
+  const CIRC = 414.7; // 2 * PI * 66
 
   // Ingresos circle — verde si alcanzas, rojo si no
   const ingStroke = document.getElementById('circleIngStroke');
