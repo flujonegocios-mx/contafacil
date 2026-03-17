@@ -395,7 +395,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         </div>
       </div>
       <div class="charts-row">
-        <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub">Últimos 6 meses</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+        <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub" id="barChartSub">Este mes</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
         <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución del período</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
       </div>
       <!-- Resumen financiero rápido -->
@@ -1410,26 +1410,101 @@ function renderDashboard() {
   // Insights
   renderTop3(filtered);
   updateObjetivosBadge();
-  renderCharts(); renderRecent(filtered);
+  renderCharts(filtered); renderRecent(filtered);
 }
 
-function renderCharts() {
-  // Bar chart always shows last 6 months relative to the latest data point — not filtered by period
-  // so the user sees the trend. But we only include months that exist in the data.
-  const monthly={};
-  S.transactions.forEach(t=>{ const ym=t.fecha.substring(0,7); if(!monthly[ym])monthly[ym]={ing:0,gas:0}; monthly[ym][t.tipo==='ingreso'?'ing':'gas']+=t.monto; });
-  const months=Object.keys(monthly).sort().slice(-6);
-  if(barChart)barChart.destroy();
-  const allVals=[...months.map(m=>monthly[m].ing),...months.map(m=>monthly[m].gas)].filter(v=>v>0);
-  const maxVal=allVals.length?Math.max(...allVals):1;
-  const minBar=maxVal*0.04; // Mínimo visual: 4% del máximo, para que barras pequeñas sean visibles
-  const ingData=months.map(m=>monthly[m].ing>0?Math.max(monthly[m].ing,minBar):0);
-  const gasData=months.map(m=>monthly[m].gas>0?Math.max(monthly[m].gas,minBar):0);
-  barChart=new Chart(document.getElementById('barChart').getContext('2d'),{type:'bar',data:{labels:months.length?months.map(fmtMonthLabel):['Sin datos'],datasets:[{label:'Ingresos',data:ingData,backgroundColor:'rgba(30,122,69,0.78)',borderRadius:6,borderSkipped:false},{label:'Gastos',data:gasData,backgroundColor:'rgba(192,57,43,0.72)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:(c,i)=>{const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex]; return ` ${fmt(real)}`;}}}},scales:{x:{grid:{display:false},ticks:{color:'#8a8270',font:{size:11}}},y:{beginAtZero:true,suggestedMax:maxVal*1.15,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8a8270',font:{size:11},callback:v=>{if(v>=1000000)return '$'+( v/1000000).toFixed(1)+'M'; if(v>=1000)return '$'+(v/1000).toFixed(0)+'k'; return '$'+v;}}}}}});
-  // Pie chart uses current period filter so it matches the KPIs
-  const _pieFiltered=getFiltered();
+function renderCharts(filtered) {
+  const now = new Date();
+
+  // ── Bar chart: group filtered transactions by month ──
+  const monthly = {};
+  filtered.forEach(t => {
+    const ym = t.fecha.substring(0,7);
+    if(!monthly[ym]) monthly[ym] = {ing:0, gas:0};
+    monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+  });
+  const months = Object.keys(monthly).sort();
+
+  // Subtitle reflects the active period
+  const subLabels = { mes:'Este mes', trim:'Trimestre actual', año:'Este año' };
+  const barSub = document.getElementById('barChartSub');
+  if(barSub) barSub.textContent = subLabels[S.period] || '';
+
+  if(barChart) barChart.destroy();
+
+  if(!months.length) {
+    // Draw empty chart
+    barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
+      type:'bar', data:{labels:['Sin datos'],datasets:[]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+    });
+  } else if(S.period === 'mes') {
+    // Single month — show bars by week (semana 1-4)
+    const weekMap = {1:{ing:0,gas:0},2:{ing:0,gas:0},3:{ing:0,gas:0},4:{ing:0,gas:0}};
+    filtered.forEach(t => {
+      const day = new Date(t.fecha+'T12:00:00').getDate();
+      const week = Math.min(Math.ceil(day/7), 4);
+      weekMap[week][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
+    });
+    const wLabels = ['Sem 1','Sem 2','Sem 3','Sem 4'];
+    const wIng = [1,2,3,4].map(w=>weekMap[w].ing);
+    const wGas = [1,2,3,4].map(w=>weekMap[w].gas);
+    const maxVal = Math.max(...wIng, ...wGas, 1);
+    const minBar = maxVal * 0.04;
+    barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
+      type:'bar',
+      data:{
+        labels: wLabels,
+        datasets:[
+          {label:'Ingresos', data:wIng.map(v=>v>0?Math.max(v,minBar):0), backgroundColor:'rgba(30,122,69,0.78)', borderRadius:6, borderSkipped:false},
+          {label:'Gastos',   data:wGas.map(v=>v>0?Math.max(v,minBar):0), backgroundColor:'rgba(192,57,43,0.72)', borderRadius:6, borderSkipped:false}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:10}},
+          tooltip:{callbacks:{label:(c)=>{const real=c.datasetIndex===0?wIng[c.dataIndex]:wGas[c.dataIndex]; return ` ${fmt(real)}`;}}}
+        },
+        scales:{
+          x:{grid:{display:false},ticks:{color:'#8a8270',font:{size:11}}},
+          y:{beginAtZero:true,suggestedMax:maxVal*1.15,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8a8270',font:{size:11},callback:v=>{if(v>=1000000)return '$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';return '$'+v;}}}
+        }
+      }
+    });
+  } else {
+    // Trimestre o Año — show by month
+    const allVals = [...months.map(m=>monthly[m].ing), ...months.map(m=>monthly[m].gas)].filter(v=>v>0);
+    const maxVal = allVals.length ? Math.max(...allVals) : 1;
+    const minBar = maxVal * 0.04;
+    const ingData = months.map(m=>monthly[m].ing>0?Math.max(monthly[m].ing,minBar):0);
+    const gasData = months.map(m=>monthly[m].gas>0?Math.max(monthly[m].gas,minBar):0);
+    barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
+      type:'bar',
+      data:{
+        labels: months.map(fmtMonthLabel),
+        datasets:[
+          {label:'Ingresos', data:ingData, backgroundColor:'rgba(30,122,69,0.78)', borderRadius:6, borderSkipped:false},
+          {label:'Gastos',   data:gasData, backgroundColor:'rgba(192,57,43,0.72)', borderRadius:6, borderSkipped:false}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:10}},
+          tooltip:{callbacks:{label:(c)=>{const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex]; return ` ${fmt(real)}`;}}}
+        },
+        scales:{
+          x:{grid:{display:false},ticks:{color:'#8a8270',font:{size:11}}},
+          y:{beginAtZero:true,suggestedMax:maxVal*1.15,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8a8270',font:{size:11},callback:v=>{if(v>=1000000)return '$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';return '$'+v;}}}
+        }
+      }
+    });
+  }
+
+  // ── Pie chart: same filtered transactions ──
   const catMap={};
-  _pieFiltered.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'outro';catMap[k]=(catMap[k]||0)+t.monto;});
+  filtered.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'otro';catMap[k]=(catMap[k]||0)+t.monto;});
   const cats=Object.keys(catMap);
   if(pieChart)pieChart.destroy();
   pieChart=new Chart(document.getElementById('pieChart').getContext('2d'),{type:'doughnut',data:{labels:cats.length?cats.map(c=>CAT_LABELS[c]||c):['Sin gastos'],datasets:[{data:cats.length?cats.map(c=>catMap[c]):[1],backgroundColor:PALETTE.map(c=>c+'cc'),borderColor:PALETTE,borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#8a8270',font:{size:10},padding:8,boxWidth:8}},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}}}}});
