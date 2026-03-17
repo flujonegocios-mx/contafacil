@@ -315,6 +315,12 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <button class="nav-item" onclick="showPage('reporte',this)">
           <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".8"/></svg></span>Reporte PDF
         </button>
+        <button class="nav-item" onclick="showPage('objetivos',this)">
+          <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" opacity=".5"/><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5" opacity=".8"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg></span>Cumplimiento
+        </button>
+        <button class="nav-item" onclick="showPage('exportar',this)">
+          <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" opacity=".5"/><path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 11l2 2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/></svg></span>Exportar Excel
+        </button>
       </nav>
     </div>
     <div>
@@ -781,6 +787,59 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 
       </div>
     </div>
+    <!-- Cumplimiento de Objetivos -->
+    <div class="page" id="page-objetivos">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Cumplimiento de objetivos</div>
+          <div class="page-subtitle">Historial mes a mes de tus metas de ingresos y límites de gastos</div>
+        </div>
+      </div>
+      <div id="objetivosHistorialContent"></div>
+    </div>
+
+    <!-- Exportar Excel -->
+    <div class="page" id="page-exportar">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Exportar a Excel</div>
+          <div class="page-subtitle">Descarga tus movimientos con filtros personalizados</div>
+        </div>
+      </div>
+      <div style="max-width:600px">
+        <div class="card" style="margin-bottom:1.25rem">
+          <div class="card-title" style="margin-bottom:1.25rem">Configurar exportación</div>
+          <!-- Período -->
+          <div class="form-group">
+            <label style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);display:block;margin-bottom:0.4rem">Período</label>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap" id="exportPeriodPills">
+              <div class="month-pill active" data-period="mes" onclick="selectExportPeriod(this,'mes')">Este mes</div>
+              <div class="month-pill" data-period="trim" onclick="selectExportPeriod(this,'trim')">Trimestre</div>
+              <div class="month-pill" data-period="año" onclick="selectExportPeriod(this,'año')">Este año</div>
+              <div class="month-pill" data-period="todo" onclick="selectExportPeriod(this,'todo')">Todo el historial</div>
+            </div>
+          </div>
+          <!-- Tipo -->
+          <div class="form-group" style="margin-top:1rem">
+            <label style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);display:block;margin-bottom:0.4rem">Tipo de movimiento</label>
+            <div style="display:flex;background:var(--surface2);border-radius:7px;padding:2px;gap:2px;width:fit-content">
+              <button id="exp-todos" onclick="setExportTipo('todos')" class="hf-btn hf-active">Todos</button>
+              <button id="exp-ingreso" onclick="setExportTipo('ingreso')" class="hf-btn">Solo ingresos</button>
+              <button id="exp-gasto" onclick="setExportTipo('gasto')" class="hf-btn">Solo gastos</button>
+            </div>
+          </div>
+          <!-- Preview -->
+          <div style="margin-top:1.25rem;padding:0.85rem;background:var(--surface2);border-radius:8px;font-size:0.82rem;color:var(--ink-muted)" id="exportPreview">
+            Selecciona filtros para ver la cantidad de registros
+          </div>
+          <button onclick="exportarExcel()" style="margin-top:1.25rem;display:flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all .15s" onmouseover="this.style.background='#235a40'" onmouseout="this.style.background='var(--accent)'">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v1.5a1 1 0 001 1h10a1 1 0 001-1V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".7"/></svg>
+            Descargar .xlsx
+          </button>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1169,20 +1228,43 @@ function fmtDate(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-MX',
 function fmtMonthLabel(ym) { const [y,m]=ym.split('-'); return new Date(y,m-1).toLocaleDateString('es-MX',{month:'short',year:'2-digit'}); }
 
 // ── META STATE ──
-// ── OBJETIVOS STATE ──
+// ── OBJETIVOS STATE — keyed by YYYY-MM ──
 let S_obj = { ing: 0, gas: 0 };
 
-function loadObjetivos() {
-  if(!S.activeBizId) return;
-  try { const saved = localStorage.getItem('cf_obj_'+S.activeBizId); S_obj = saved ? JSON.parse(saved) : {ing:0,gas:0}; } catch(e) { S_obj={ing:0,gas:0}; }
+function currentYM() {
+  const n = new Date();
+  return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
 }
-function saveObjetivos(ing, gas) {
-  S_obj = {ing, gas};
-  try { localStorage.setItem('cf_obj_'+S.activeBizId, JSON.stringify(S_obj)); } catch(e){}
+
+function objKey(bizId, ym) { return 'cf_obj_'+bizId+'_'+ym; }
+
+function loadObjetivos(ym) {
+  if(!S.activeBizId) return;
+  const key = objKey(S.activeBizId, ym||currentYM());
+  try { const saved = localStorage.getItem(key); S_obj = saved ? JSON.parse(saved) : {ing:0,gas:0}; } catch(e) { S_obj={ing:0,gas:0}; }
+}
+
+function saveObjetivos(ing, gas, ym) {
+  const key = objKey(S.activeBizId, ym||currentYM());
+  const now = new Date();
+  S_obj = {ing, gas, savedAt: now.toISOString(), ym: ym||currentYM()};
+  try { localStorage.setItem(key, JSON.stringify(S_obj)); } catch(e){}
+  // Also maintain an index of all months with objectives
+  try {
+    const idxKey = 'cf_obj_idx_'+S.activeBizId;
+    const idx = JSON.parse(localStorage.getItem(idxKey)||'[]');
+    if(!idx.includes(ym||currentYM())) idx.push(ym||currentYM());
+    localStorage.setItem(idxKey, JSON.stringify(idx));
+  } catch(e){}
+}
+
+function getAllObjMonths() {
+  if(!S.activeBizId) return [];
+  try { return JSON.parse(localStorage.getItem('cf_obj_idx_'+S.activeBizId)||'[]').sort().reverse(); } catch(e){ return []; }
 }
 
 function openObjetivosModal() {
-  loadObjetivos();
+  loadObjetivos(currentYM());
   document.getElementById('inputMetaIng').value = S_obj.ing || '';
   document.getElementById('inputMetaGas').value = S_obj.gas || '';
   document.getElementById('objetivosModal').classList.add('show');
@@ -1196,14 +1278,14 @@ function closeObjetivosModal() {
 function guardarObjetivos() {
   const ing = parseFloat(document.getElementById('inputMetaIng').value) || 0;
   const gas = parseFloat(document.getElementById('inputMetaGas').value) || 0;
-  saveObjetivos(ing, gas);
+  saveObjetivos(ing, gas, currentYM());
   renderCircles();
   updateObjetivosBadge();
-  showToast('✅ Objetivos guardados', 'ok');
+  showToast('✅ Objetivos guardados para '+fmtMonthLabel(currentYM()), 'ok');
 }
 
 function updateObjetivosBadge() {
-  loadObjetivos();
+  loadObjetivos(currentYM());
   const badge = document.getElementById('objetivosBadge');
   if(badge) badge.style.display = (S_obj.ing || S_obj.gas) ? 'inline-block' : 'none';
 
@@ -1246,7 +1328,7 @@ function updateObjetivosBadge() {
 }
 
 function renderCircles() {
-  loadObjetivos();
+  loadObjetivos(currentYM());
   const filtered = getFiltered();
   const ing = filtered.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
   const gas = filtered.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
@@ -1842,6 +1924,8 @@ function showPage(page,btn) {
   if(page==='pl'){S.plMeses=new Set();renderPL();}
   if(page==='historial'){renderHistorial();loadImports();}
   if(page==='reporte')initReportePage();
+  if(page==='objetivos')renderObjetivosPage();
+  if(page==='exportar')updateExportPreview();
 
 }
 
@@ -3074,6 +3158,163 @@ function simularInversion() {
 
   document.getElementById('invResult').style.display = 'block';
   document.getElementById('invResult').innerHTML = html;
+}
+
+
+// ── CUMPLIMIENTO PAGE ──
+function renderObjetivosPage() {
+  const container = document.getElementById('objetivosHistorialContent');
+  if(!container) return;
+  const months = getAllObjMonths();
+  if(!months.length) {
+    container.innerHTML = `<div class="empty" style="padding:4rem"><div class="empty-icon">🎯</div><h4>Sin objetivos registrados</h4><p>Abre el botón "Objetivos" en el dashboard y define tus metas mensuales.</p></div>`;
+    return;
+  }
+  let html = '<div style="display:flex;flex-direction:column;gap:1rem">';
+  months.forEach(ym => {
+    const key = objKey(S.activeBizId, ym);
+    let obj = {ing:0,gas:0};
+    try { const s = localStorage.getItem(key); if(s) obj = JSON.parse(s); } catch(e){}
+    // Get actual results for that month
+    const txs = S.transactions.filter(t=>t.fecha.startsWith(ym));
+    const realIng = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+    const realGas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+    const ingPct = obj.ing>0 ? (realIng/obj.ing*100) : null;
+    const gasPct = obj.gas>0 ? (realGas/obj.gas*100) : null;
+    const ingOk = ingPct !== null && ingPct >= 100;
+    const gasOk = gasPct !== null && realGas <= obj.gas;
+    const isCurrentMonth = ym === currentYM();
+    html += `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem">${fmtMonthLabel(ym)}</div>
+          <div style="font-size:0.72rem;color:var(--ink-muted);margin-top:0.15rem">${isCurrentMonth?'Mes en curso':'Mes cerrado'}</div>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          ${obj.ing>0 ? `<span style="padding:0.25rem 0.65rem;border-radius:20px;font-size:0.72rem;font-weight:700;background:${ingOk?'var(--green-bg)':'var(--red-bg)'};color:${ingOk?'var(--green)':'var(--red)'}">
+            ${ingOk?'✓':'✗'} Ingresos</span>` : ''}
+          ${obj.gas>0 ? `<span style="padding:0.25rem 0.65rem;border-radius:20px;font-size:0.72rem;font-weight:700;background:${gasOk?'var(--green-bg)':'var(--red-bg)'};color:${gasOk?'var(--green)':'var(--red)'}">
+            ${gasOk?'✓':'✗'} Gastos</span>` : ''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        ${obj.ing>0?`<div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.3rem">
+            <span style="color:var(--ink-muted)">Meta ingresos</span>
+            <span style="font-weight:700;color:${ingOk?'var(--green)':'var(--red)'}">${ingPct!==null?ingPct.toFixed(0)+'%':'—'}</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:99px;height:6px;overflow:hidden">
+            <div style="height:6px;border-radius:99px;width:${Math.min(ingPct||0,100)}%;background:${ingOk?'var(--green)':'var(--red)'};transition:width .6s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--ink-muted);margin-top:0.3rem">
+            <span>${fmt(realIng)} real</span><span>meta ${fmt(obj.ing)}</span>
+          </div>
+        </div>`:'<div></div>'}
+        ${obj.gas>0?`<div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.3rem">
+            <span style="color:var(--ink-muted)">Límite gastos</span>
+            <span style="font-weight:700;color:${gasOk?'var(--green)':'var(--red)'}">${gasPct!==null?gasPct.toFixed(0)+'%':'—'}</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:99px;height:6px;overflow:hidden">
+            <div style="height:6px;border-radius:99px;width:${Math.min(gasPct||0,100)}%;background:${gasOk?'var(--green)':'var(--red)'};transition:width .6s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--ink-muted);margin-top:0.3rem">
+            <span>${fmt(realGas)} real</span><span>límite ${fmt(obj.gas)}</span>
+          </div>
+        </div>`:'<div></div>'}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ── EXPORTAR EXCEL ──
+let _exportPeriod = 'mes';
+let _exportTipo = 'todos';
+
+function selectExportPeriod(el, period) {
+  _exportPeriod = period;
+  document.querySelectorAll('#exportPeriodPills .month-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  updateExportPreview();
+}
+
+function setExportTipo(tipo) {
+  _exportTipo = tipo;
+  ['todos','ingreso','gasto'].forEach(t=>{
+    const b = document.getElementById('exp-'+t);
+    if(b) b.classList.toggle('hf-active', t===tipo);
+  });
+  updateExportPreview();
+}
+
+function getExportFiltered() {
+  const now = new Date();
+  const yr = now.getFullYear().toString();
+  const ym = yr+'-'+String(now.getMonth()+1).padStart(2,'0');
+  let txs = [...S.transactions];
+  if(_exportPeriod==='mes') txs = txs.filter(t=>t.fecha.startsWith(ym));
+  else if(_exportPeriod==='trim') {
+    const q = Math.floor(now.getMonth()/3);
+    txs = txs.filter(t=>{ const d=new Date(t.fecha+'T12:00:00'); return Math.floor(d.getMonth()/3)===q && d.getFullYear()===now.getFullYear(); });
+  }
+  else if(_exportPeriod==='año') txs = txs.filter(t=>t.fecha.startsWith(yr));
+  if(_exportTipo!=='todos') txs = txs.filter(t=>t.tipo===_exportTipo);
+  return txs;
+}
+
+function updateExportPreview() {
+  const txs = getExportFiltered();
+  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const el = document.getElementById('exportPreview');
+  if(el) el.innerHTML = `<strong style="color:var(--ink)">${txs.length} movimientos</strong> seleccionados &nbsp;·&nbsp; Ingresos: <span style="color:var(--green);font-weight:600">${fmt(ing)}</span> &nbsp;·&nbsp; Gastos: <span style="color:var(--red);font-weight:600">${fmt(gas)}</span>`;
+}
+
+function exportarExcel() {
+  const txs = getExportFiltered();
+  if(!txs.length) return showToast('No hay movimientos para exportar', 'err');
+  const biz = S.businesses.find(b=>b.id===S.activeBizId);
+  const bizName = biz?.name || 'negocio';
+
+  // Build CSV with BOM for Excel UTF-8
+  const headers = ['Fecha','Concepto','Tipo','Categoría','Monto','Negocio'];
+  const rows = txs.map(t=>[
+    t.fecha,
+    '"'+String(t.concepto||'').replace(/"/g,'""')+'"',
+    t.tipo==='ingreso'?'Ingreso':'Gasto',
+    '"'+(CAT_LABELS[t.categoria]||t.categoria||'')+ '"',
+    t.tipo==='ingreso'?t.monto:-t.monto,
+    '"'+bizName+'"'
+  ]);
+
+  // Summary rows
+  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const util = ing - gas;
+
+  let csv = '\uFEFF'; // BOM
+  csv += headers.join(',')+'\n';
+  rows.forEach(r=>{ csv += r.join(',')+'\n'; });
+  csv += '\n'; // blank line
+  csv += ',,,,\n';
+  csv += '"RESUMEN",,,,\n';
+  csv += '"Total Ingresos",,,,"'+ing+'"\n';
+  csv += '"Total Gastos",,,,"'+(-gas)+'"\n';
+  csv += '"Utilidad Bruta",,,,"'+util+'"\n';
+
+  // Determine filename
+  const now = new Date();
+  const periodLabels = {mes:'este_mes',trim:'trimestre',año:'año',todo:'historial'};
+  const fname = 'contafacil_'+bizName.replace(/\s+/g,'_')+'_'+periodLabels[_exportPeriod]+'_'+now.getFullYear()+'.csv';
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=fname; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Descargado: '+fname, 'ok');
 }
 
 init();
