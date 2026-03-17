@@ -1047,10 +1047,10 @@ function renderTrend(elId, current, previous) {
   const pct = Math.abs((diff/previous)*100).toFixed(1);
   if(diff > 0) {
     el.className='kpi-trend up';
-    el.innerHTML=`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 8L5 2L8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> +${pct}% vs período anterior`;
+    el.innerHTML=`<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><line x1="5.5" y1="9" x2="5.5" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><polyline points="2.5,5 5.5,2 8.5,5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> +${pct}% vs período anterior`;
   } else if(diff < 0) {
     el.className='kpi-trend down';
-    el.innerHTML=`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2L5 8L8 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> −${pct}% vs período anterior`;
+    el.innerHTML=`<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><line x1="5.5" y1="2" x2="5.5" y2="9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><polyline points="2.5,6 5.5,9 8.5,6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> −${pct}% vs período anterior`;
   } else {
     el.className='kpi-trend neutral';
     el.innerHTML=`— igual que período anterior`;
