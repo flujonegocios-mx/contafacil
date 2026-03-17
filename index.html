@@ -192,6 +192,15 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .btn-outline { padding:0.65rem 1rem; border:1.5px solid var(--border); border-radius:8px; background:none; font-family:'Instrument Sans',sans-serif; font-size:0.85rem; cursor:pointer; color:var(--ink-muted); }
 .btn-full { flex:1; padding:0.65rem; background:var(--ink); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:0.88rem; cursor:pointer; }
 
+.hf-btn { padding:0.3rem 0.8rem; border:none; border-radius:5px; font-family:'Instrument Sans',sans-serif; font-size:0.78rem; cursor:pointer; font-weight:500; background:none; color:var(--ink-muted); transition:all .15s; }
+.hf-btn.hf-active { background:var(--ink); color:#fff; font-weight:700; }
+.hf-month { padding:0.25rem 0.65rem; border:1.5px solid var(--border); border-radius:20px; font-size:0.75rem; cursor:pointer; transition:all .15s; color:var(--ink-muted); background:var(--surface); font-family:'Instrument Sans',sans-serif; white-space:nowrap; }
+.hf-month.active { background:var(--ink); color:#fff; border-color:var(--ink); font-weight:600; }
+.hf-month:hover:not(.active) { border-color:var(--accent); color:var(--accent); }
+.hist-item { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1.25rem; border-bottom:1px solid rgba(226,221,212,0.45); transition:background .1s; }
+.hist-item:last-child { border-bottom:none; }
+.hist-item:hover { background:var(--surface2); }
+
 .toast { position:fixed; bottom:1.5rem; right:1.5rem; background:var(--ink); color:#fff; padding:0.65rem 1.1rem; border-radius:8px; font-size:0.82rem; z-index:300; transform:translateY(80px); opacity:0; transition:all 0.3s; pointer-events:none; }
 .toast.show { transform:translateY(0); opacity:1; }
 .toast.ok { background:var(--green); }
@@ -362,19 +371,19 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     </div>
 
     <!-- Historial -->
-    <div class="page" id="page-historial">
+    <div class="page" id="page-historial" style="padding-bottom:110px">
       <div class="topbar">
-        <div><div class="page-title">Historial completo</div><div class="page-subtitle" id="histSub">Todos los movimientos</div></div>
-        <select id="histFilter" onchange="renderHistorial()" style="padding:0.4rem 0.75rem;border:1px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;background:var(--surface)">
-          <option value="todos">Todos</option><option value="ingreso">Solo ingresos</option><option value="gasto">Solo gastos</option>
-        </select>
+        <div>
+          <div class="page-title">Historial completo</div>
+          <div class="page-subtitle" id="histSub">Todos los movimientos</div>
+        </div>
       </div>
 
-      <!-- Importaciones -->
+      <!-- Importaciones arriba -->
       <div class="card" style="margin-bottom:1.25rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
           <div>
-            <div class="card-title">📥 Historial de importaciones</div>
+            <div class="card-title" style="font-size:0.85rem">Historial de importaciones</div>
             <div class="card-sub">Archivos Excel subidos — puedes borrar todos los registros de una importación</div>
           </div>
         </div>
@@ -382,7 +391,28 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       </div>
 
       <!-- Transacciones -->
-      <div class="card"><div class="tx-list" style="max-height:none" id="histList"></div></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="histList" style="display:flex;flex-direction:column"></div>
+      </div>
+
+      <!-- Barra de filtros pegada abajo -->
+      <div id="histFilterBar" style="position:fixed;bottom:0;left:260px;right:0;background:var(--surface);border-top:1.5px solid var(--border);padding:0.75rem 2.5rem;z-index:40;display:flex;flex-direction:column;gap:0.55rem;box-shadow:0 -4px 20px rgba(0,0,0,0.06)">
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted)">Tipo</span>
+            <div style="display:flex;background:var(--surface2);border-radius:7px;padding:2px;gap:2px">
+              <button id="hf-todos" onclick="setHistTipo('todos')" class="hf-btn hf-active">Todos</button>
+              <button id="hf-ingreso" onclick="setHistTipo('ingreso')" class="hf-btn">Ingresos</button>
+              <button id="hf-gasto" onclick="setHistTipo('gasto')" class="hf-btn">Gastos</button>
+            </div>
+          </div>
+          <button onclick="limpiarFiltrosHist()" style="font-size:0.73rem;color:var(--ink-muted);background:none;border:1px solid var(--border);border-radius:6px;padding:0.28rem 0.7rem;cursor:pointer;font-family:'Instrument Sans',sans-serif;margin-left:auto;transition:all .15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-muted)'">Limpiar filtros</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
+          <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);white-space:nowrap">Meses</span>
+          <div id="histMonthPills" style="display:flex;gap:0.3rem;flex-wrap:wrap"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Importar -->
@@ -982,11 +1012,70 @@ function renderPL(filterYM=null) {
   document.getElementById('plBody').innerHTML=html||`<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--ink-muted)">Sin movimientos</td></tr>`;
 }
 
+// ── HISTORIAL FILTERS STATE ──
+let _histTipo = 'todos';
+let _histMeses = new Set(); // empty = todos los meses
+
+function setHistTipo(tipo) {
+  _histTipo = tipo;
+  ['todos','ingreso','gasto'].forEach(t => {
+    const btn = document.getElementById('hf-'+t);
+    if(btn) { btn.classList.toggle('hf-active', t===tipo); }
+  });
+  renderHistorial();
+}
+
+function toggleHistMes(ym) {
+  if(_histMeses.has(ym)) _histMeses.delete(ym);
+  else _histMeses.add(ym);
+  // Update pill styles
+  document.querySelectorAll('.hf-month').forEach(p => {
+    p.classList.toggle('active', _histMeses.has(p.dataset.ym));
+  });
+  renderHistorial();
+}
+
+function limpiarFiltrosHist() {
+  _histTipo = 'todos';
+  _histMeses = new Set();
+  document.querySelectorAll('.hf-btn').forEach(b => b.classList.remove('hf-active'));
+  const todosBtn = document.getElementById('hf-todos');
+  if(todosBtn) todosBtn.classList.add('hf-active');
+  document.querySelectorAll('.hf-month').forEach(p => p.classList.remove('active'));
+  renderHistorial();
+}
+
+function buildMonthPills() {
+  const monthSet = new Set(S.transactions.map(t => t.fecha.substring(0,7)));
+  const months = [...monthSet].sort().reverse();
+  const container = document.getElementById('histMonthPills');
+  if(!container) return;
+  container.innerHTML = months.map(ym =>
+    `<div class="hf-month${_histMeses.has(ym)?' active':''}" data-ym="${ym}" onclick="toggleHistMes('${ym}')">${fmtMonthLabel(ym)}</div>`
+  ).join('');
+}
+
 function renderHistorial() {
-  const filter=document.getElementById('histFilter')?.value||'todos';
-  let all=[...S.transactions]; if(filter!=='todos')all=all.filter(t=>t.tipo===filter);
-  document.getElementById('histSub').textContent=`${all.length} movimientos`;
-  document.getElementById('histList').innerHTML=all.length?all.map(t=>`<div class="tx-item"><div class="tx-dot" style="background:${t.tipo==='ingreso'?'var(--green)':'var(--red)'}"></div><div class="tx-info"><div class="tx-concepto">${t.concepto}</div><div class="tx-meta">${fmtDate(t.fecha)} · ${CAT_LABELS[t.categoria]||t.categoria||t.tipo}</div></div><div class="tx-amount ${t.tipo}">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</div><button class="tx-del" onclick="deleteTransaction('${t.id}')">✕</button></div>`).join(''):`<div class="empty"><div class="empty-icon">🧾</div><h4>Sin historial</h4><p>Tus movimientos aparecerán aquí</p></div>`;
+  buildMonthPills();
+  let all = [...S.transactions];
+  if(_histTipo !== 'todos') all = all.filter(t => t.tipo === _histTipo);
+  if(_histMeses.size > 0) all = all.filter(t => _histMeses.has(t.fecha.substring(0,7)));
+  document.getElementById('histSub').textContent = `${all.length} movimiento${all.length!==1?'s':''}`;
+  const list = document.getElementById('histList');
+  if(!all.length) {
+    list.innerHTML = `<div class="empty" style="padding:3rem"><div class="empty-icon">🧾</div><h4>Sin movimientos</h4><p>Ajusta los filtros o registra tu primer movimiento</p></div>`;
+    return;
+  }
+  list.innerHTML = all.map(t => `
+    <div class="hist-item">
+      <div class="tx-dot" style="background:${t.tipo==='ingreso'?'var(--green)':'var(--red)'}"></div>
+      <div class="tx-info" style="flex:1;min-width:0">
+        <div class="tx-concepto">${t.concepto}</div>
+        <div class="tx-meta">${fmtDate(t.fecha)} · ${CAT_LABELS[t.categoria]||t.categoria||t.tipo}</div>
+      </div>
+      <div class="tx-amount ${t.tipo}" style="font-size:0.92rem;font-weight:700">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</div>
+      <button class="tx-del" onclick="deleteTransaction('${t.id}')">✕</button>
+    </div>`).join('');
 }
 
 function showPage(page,btn) {
