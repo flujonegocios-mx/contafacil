@@ -274,11 +274,17 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 
 <div class="loading-screen" id="loadingScreen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:1.5rem">
-    <svg width="52" height="52" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:scaleIn 0.5s ease">
-      <rect width="32" height="32" rx="9" fill="#2d6a4f"/>
-      <path d="M20.5 10H13C11.3 10 10 11.3 10 13v6c0 1.7 1.3 3 3 3h7.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      <path d="M10 16h7" stroke="white" stroke-width="2" stroke-linecap="round"/>
-    </svg>
+    <svg style="animation:scaleIn 0.5s ease" width="52" height="52" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="10" fill="#1e7a45"/>
+  <!-- Bold C with integrated upward tick — reads as "CF" and "growth" -->
+  <!-- C arc -->
+  <path d="M25 14C22.5 11.5 17 11.5 14.5 16C12 20.5 14.5 27 20 28C22.5 28.5 24.5 27.5 26 26" 
+    stroke="white" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+  <!-- Vertical F stem -->
+  <path d="M26 14v12" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- F crossbar -->
+  <path d="M22 20h4" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+</svg>
     <div class="loading-logo" style="animation:fadeUp 0.5s ease 0.15s both">Conta<span>Fácil</span></div>
     <div class="spinner" style="animation:none;border-top-color:#4ade80;opacity:0.7"></div>
   </div>
@@ -288,10 +294,16 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="auth-logo-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="9" fill="var(--accent)"/>
-  <path d="M20.5 10H13C11.3 10 10 11.3 10 13v6c0 1.7 1.3 3 3 3h7.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
-  <path d="M10 16h7" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <div class="auth-logo-icon"><svg width="56" height="56" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="10" fill="#1e7a45"/>
+  <!-- Bold C with integrated upward tick — reads as "CF" and "growth" -->
+  <!-- C arc -->
+  <path d="M25 14C22.5 11.5 17 11.5 14.5 16C12 20.5 14.5 27 20 28C22.5 28.5 24.5 27.5 26 26" 
+    stroke="white" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+  <!-- Vertical F stem -->
+  <path d="M26 14v12" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- F crossbar -->
+  <path d="M22 20h4" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
 </svg></div>
       <h1>Conta<span>Fácil</span></h1>
       <p>Inicia sesión con tu cuenta</p>
@@ -324,10 +336,16 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 <div class="app" id="appScreen">
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="sidebar-logo-icon"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="8" fill="#2d6a4f"/>
-  <path d="M20.5 10H13C11.3 10 10 11.3 10 13v6c0 1.7 1.3 3 3 3h7.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
-  <path d="M10 16h7" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <div class="sidebar-logo-icon"><svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="10" fill="#1e7a45"/>
+  <!-- Bold C with integrated upward tick — reads as "CF" and "growth" -->
+  <!-- C arc -->
+  <path d="M25 14C22.5 11.5 17 11.5 14.5 16C12 20.5 14.5 27 20 28C22.5 28.5 24.5 27.5 26 26" 
+    stroke="white" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+  <!-- Vertical F stem -->
+  <path d="M26 14v12" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- F crossbar -->
+  <path d="M22 20h4" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
 </svg></div>
       <div class="sidebar-logo-text">Conta<span>Fácil</span></div>
     </div>
@@ -554,10 +572,16 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <!-- Step 1: Upload -->
       <div id="importStep1">
         <div class="card" style="max-width:600px">
-          <div class="card-title" style="margin-bottom:0.5rem">📂 Paso 1 — Sube tu archivo</div>
+          <div class="card-title" style="margin-bottom:0.5rem">Paso 1 — Sube tu archivo</div>
           <div class="card-sub" style="margin-bottom:1.25rem">Acepta archivos .xlsx, .xls o .csv</div>
           <div id="dropZone" onclick="document.getElementById('fileInput').click()" style="border:2px dashed var(--border);border-radius:10px;padding:2.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2)">
-            <div style="font-size:2.5rem;margin-bottom:0.75rem">📊</div>
+            <div style="margin-bottom:0.75rem;opacity:0.45">
+  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="8" width="36" height="32" rx="5" stroke="var(--ink)" stroke-width="1.8"/>
+    <path d="M24 18v12M18 24l6-6 6 6" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16 36h16" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round" opacity=".4"/>
+  </svg>
+</div>
             <div style="font-weight:600;margin-bottom:0.3rem">Arrastra tu archivo aquí</div>
             <div style="font-size:0.8rem;color:var(--ink-muted)">o haz clic para seleccionar</div>
             <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
