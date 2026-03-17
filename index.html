@@ -194,7 +194,10 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 
 .hf-btn { padding:0.3rem 0.8rem; border:none; border-radius:5px; font-family:'Instrument Sans',sans-serif; font-size:0.78rem; cursor:pointer; font-weight:500; background:none; color:var(--ink-muted); transition:all .15s; }
 .hf-btn.hf-active { background:var(--ink); color:#fff; font-weight:700; }
-.hf-month { padding:0.25rem 0.65rem; border:1.5px solid var(--border); border-radius:20px; font-size:0.75rem; cursor:pointer; transition:all .15s; color:var(--ink-muted); background:var(--surface); font-family:'Instrument Sans',sans-serif; white-space:nowrap; }
+.hf-month { padding:0.25rem 0.65rem; border:1.5px solid var(--border); border-radius:20px; font-size:0.75rem; cursor:pointer; transition:all .15s; color:var(--ink-muted); background:var(--surface); font-family:'Instrument Sans',sans-serif; white-space:nowrap; flex-shrink:0; }
+#histMonthPills::-webkit-scrollbar { height:3px; }
+#histMonthPills::-webkit-scrollbar-track { background:transparent; }
+#histMonthPills::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 .hf-month.active { background:var(--ink); color:#fff; border-color:var(--ink); font-weight:600; }
 .hf-month:hover:not(.active) { border-color:var(--accent); color:var(--accent); }
 .hist-item { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1.25rem; border-bottom:1px solid rgba(226,221,212,0.45); transition:background .1s; }
@@ -388,6 +391,11 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           </div>
         </div>
         <div id="importsList"><div style="color:var(--ink-muted);font-size:0.83rem">Cargando...</div></div>
+        <!-- Pills de meses debajo de importaciones -->
+        <div style="margin-top:1rem;padding-top:0.85rem;border-top:1px solid var(--border)">
+          <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);margin-bottom:0.5rem">Filtrar por mes</div>
+          <div id="histMonthPills" style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent"></div>
+        </div>
       </div>
 
       <!-- Transacciones -->
@@ -408,10 +416,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           </div>
           <button onclick="limpiarFiltrosHist()" style="font-size:0.73rem;color:var(--ink-muted);background:none;border:1px solid var(--border);border-radius:6px;padding:0.28rem 0.7rem;cursor:pointer;font-family:'Instrument Sans',sans-serif;margin-left:auto;transition:all .15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-muted)'">Limpiar filtros</button>
         </div>
-        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
-          <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);white-space:nowrap">Meses</span>
-          <div id="histMonthPills" style="display:flex;gap:0.3rem;flex-wrap:wrap"></div>
-        </div>
+
       </div>
     </div>
 
