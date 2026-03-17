@@ -318,7 +318,24 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn-primary" id="btnLogin" onclick="doLogin()">Entrar →</button>
-    <p style="text-align:center;margin-top:1.25rem;font-size:0.78rem;color:var(--ink-muted)">¿Problemas para entrar? Contacta a tu asesor.</p>
+    <div style="text-align:center;margin-top:1rem">
+      <button onclick="showForgotView()" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px">¿Olvidaste tu contraseña?</button>
+    </div>
+
+    <!-- Forgot password view (hidden by default) -->
+    <div id="forgotView" style="display:none;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+      <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:1rem;line-height:1.5">Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.</p>
+      <div class="auth-msg error" id="forgotMsg" style="display:none"></div>
+      <div class="auth-msg" id="forgotOkMsg" style="display:none;background:var(--green-bg);border:1px solid #a8d5b5;color:var(--green);padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem"></div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="forgotEmail" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doForgot()">
+      </div>
+      <button class="btn-primary" id="btnForgot" onclick="doForgot()">Enviar enlace →</button>
+      <div style="text-align:center;margin-top:0.75rem">
+        <button onclick="hideForgotView()" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.78rem;color:var(--ink-muted);cursor:pointer">← Volver al login</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -399,6 +416,10 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <button class="btn-new-biz" onclick="openBizModal()">+ Nuevo negocio</button>
     </div>
     <div class="sidebar-footer">
+      <button class="btn-logout" onclick="openCambiarPassModal()" style="color:rgba(255,255,255,0.35)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="opacity:.5"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Cambiar contraseña
+      </button>
       <button class="btn-logout" onclick="doLogout()">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="opacity:.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Cerrar sesión
@@ -1021,6 +1042,68 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 </div>
 
 <!-- New Biz Modal -->
+<!-- Cambiar Contraseña Modal -->
+<div class="modal-overlay" id="cambiarPassModal">
+  <div class="modal" style="max-width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h3 style="margin:0">Cambiar contraseña</h3>
+      <button onclick="closeCambiarPassModal()" style="background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:1.2rem;padding:0.2rem">✕</button>
+    </div>
+
+    <!-- Tab toggle -->
+    <div style="display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px;margin-bottom:1.25rem">
+      <button id="tabDirecta" onclick="setCambiarTab('directa')" class="hf-btn hf-active" style="flex:1;text-align:center">Nueva contraseña</button>
+      <button id="tabCorreo" onclick="setCambiarTab('correo')" class="hf-btn" style="flex:1;text-align:center">Por correo</button>
+    </div>
+
+    <!-- Tab A: change directly -->
+    <div id="cambiarTabDirecta">
+      <div class="auth-msg error" id="cambiarMsg" style="display:none;margin-bottom:1rem;padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;background:var(--red-bg);border:1px solid #f5c6c2;color:var(--red)"></div>
+      <div class="auth-msg" id="cambiarOkMsg" style="display:none;margin-bottom:1rem;padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;background:var(--green-bg);border:1px solid #a8d5b5;color:var(--green)"></div>
+      <div class="form-group">
+        <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-muted);display:block;margin-bottom:0.4rem">Nueva contraseña</label>
+        <input type="password" id="newPass1" placeholder="Mínimo 8 caracteres"
+          style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--surface);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')doCambiarPass()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-muted);display:block;margin-bottom:0.4rem">Confirmar contraseña</label>
+        <input type="password" id="newPass2" placeholder="Repite la nueva contraseña"
+          style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--surface);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')doCambiarPass()">
+      </div>
+      <!-- Password strength indicator -->
+      <div id="passStrengthWrap" style="margin-bottom:1rem;display:none">
+        <div style="display:flex;gap:4px;margin-bottom:4px">
+          <div id="ps1" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s"></div>
+          <div id="ps2" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s"></div>
+          <div id="ps3" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s"></div>
+          <div id="ps4" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s"></div>
+        </div>
+        <div id="psLabel" style="font-size:0.7rem;color:var(--ink-muted)"></div>
+      </div>
+      <button onclick="doCambiarPass()" id="btnCambiarPass"
+        style="width:100%;padding:0.75rem;background:var(--ink);color:#fff;border:none;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all .15s">
+        Guardar nueva contraseña
+      </button>
+    </div>
+
+    <!-- Tab B: send email link -->
+    <div id="cambiarTabCorreo" style="display:none">
+      <p style="font-size:0.83rem;color:var(--ink-muted);line-height:1.6;margin-bottom:1.25rem">
+        Te enviaremos un enlace seguro a <strong id="cambiarEmailLabel" style="color:var(--ink)"></strong> para que cambies tu contraseña desde tu correo.
+      </p>
+      <div id="cambiarCorreoOk" style="display:none;padding:0.75rem 1rem;background:var(--green-bg);border:1px solid #a8d5b5;border-radius:8px;font-size:0.83rem;color:var(--green);margin-bottom:1rem;line-height:1.5"></div>
+      <button onclick="doEnviarEnlace()" id="btnEnviarEnlace"
+        style="width:100%;padding:0.75rem;background:var(--ink);color:#fff;border:none;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all .15s">
+        Enviar enlace al correo
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="bizModal">
   <div class="modal">
     <h3>Nuevo negocio</h3>
@@ -3407,6 +3490,177 @@ function exportarExcel() {
   URL.revokeObjectURL(url);
   showToast('✅ Descargado: '+fname, 'ok');
 }
+
+
+// ── CONTRASEÑA: OLVIDÉ / CAMBIAR ────────────────────────────────
+
+// ── Forgot password (login screen) ──
+function showForgotView() {
+  document.getElementById('forgotView').style.display = 'block';
+  document.getElementById('forgotEmail').value = document.getElementById('loginEmail').value || '';
+  document.getElementById('forgotEmail').focus();
+}
+function hideForgotView() {
+  document.getElementById('forgotView').style.display = 'none';
+  document.getElementById('forgotMsg').style.display = 'none';
+  document.getElementById('forgotOkMsg').style.display = 'none';
+}
+
+async function doForgot() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if(!email) return showForgotMsg('Ingresa tu correo electrónico.', 'err');
+  if(noInternet()) return showForgotMsg('Sin conexión. Revisa tu red e intenta de nuevo.', 'err');
+  const btn = document.getElementById('btnForgot');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const { error } = await withTimeout(
+      sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname + '?reset=true'
+      })
+    );
+    btn.disabled = false; btn.textContent = 'Enviar enlace →';
+    if(error) return showForgotMsg('No se pudo enviar el correo. Verifica que el email sea correcto.', 'err');
+    showForgotMsg('✓ Enlace enviado. Revisa tu bandeja de entrada (y spam).', 'ok');
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Enviar enlace →';
+    showForgotMsg(e.message === 'TIMEOUT' ? 'El servidor tardó demasiado. Intenta de nuevo.' : 'Error al enviar. Intenta de nuevo.', 'err');
+  }
+}
+
+function showForgotMsg(msg, type) {
+  const err = document.getElementById('forgotMsg');
+  const ok  = document.getElementById('forgotOkMsg');
+  if(type === 'ok') {
+    ok.textContent = msg; ok.style.display = 'block';
+    err.style.display = 'none';
+  } else {
+    err.textContent = msg; err.style.display = 'block';
+    ok.style.display = 'none';
+  }
+}
+
+// ── Change password modal (logged in) ──
+function openCambiarPassModal() {
+  setCambiarTab('directa');
+  document.getElementById('newPass1').value = '';
+  document.getElementById('newPass2').value = '';
+  document.getElementById('cambiarMsg').style.display = 'none';
+  document.getElementById('cambiarOkMsg').style.display = 'none';
+  document.getElementById('passStrengthWrap').style.display = 'none';
+  // Set email label for "por correo" tab
+  const emailLabel = document.getElementById('cambiarEmailLabel');
+  if(emailLabel && S.user) emailLabel.textContent = S.user.email;
+  document.getElementById('cambiarCorreoOk').style.display = 'none';
+  document.getElementById('cambiarPassModal').classList.add('show');
+  setTimeout(() => document.getElementById('newPass1').focus(), 100);
+}
+
+function closeCambiarPassModal() {
+  document.getElementById('cambiarPassModal').classList.remove('show');
+}
+
+function setCambiarTab(tab) {
+  const isDirecta = tab === 'directa';
+  document.getElementById('cambiarTabDirecta').style.display = isDirecta ? 'block' : 'none';
+  document.getElementById('cambiarTabCorreo').style.display = isDirecta ? 'none' : 'block';
+  document.getElementById('tabDirecta').classList.toggle('hf-active', isDirecta);
+  document.getElementById('tabCorreo').classList.toggle('hf-active', !isDirecta);
+}
+
+// Password strength checker
+document.addEventListener('DOMContentLoaded', () => {
+  const p1 = document.getElementById('newPass1');
+  if(!p1) return;
+  p1.addEventListener('input', () => {
+    const val = p1.value;
+    const wrap = document.getElementById('passStrengthWrap');
+    if(!val) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    const score = [val.length >= 8, /[A-Z]/.test(val), /[0-9]/.test(val), /[^A-Za-z0-9]/.test(val)].filter(Boolean).length;
+    const colors = ['','var(--red)','var(--gold)','var(--gold)','var(--green)'];
+    const labels = ['','Muy débil','Débil','Buena','Segura'];
+    [1,2,3,4].forEach(i => {
+      document.getElementById('ps'+i).style.background = i <= score ? colors[score] : 'var(--border)';
+    });
+    document.getElementById('psLabel').textContent = labels[score];
+    document.getElementById('psLabel').style.color = colors[score];
+  });
+});
+
+async function doCambiarPass() {
+  const p1 = document.getElementById('newPass1').value;
+  const p2 = document.getElementById('newPass2').value;
+  const msgEl = document.getElementById('cambiarMsg');
+  const okEl  = document.getElementById('cambiarOkMsg');
+  msgEl.style.display = 'none'; okEl.style.display = 'none';
+
+  if(!p1) return showCambiarMsg('Escribe tu nueva contraseña.', 'err');
+  if(p1.length < 8) return showCambiarMsg('La contraseña debe tener al menos 8 caracteres.', 'err');
+  if(p1 !== p2) return showCambiarMsg('Las contraseñas no coinciden.', 'err');
+  if(noInternet()) return showCambiarMsg('Sin conexión. Intenta de nuevo.', 'err');
+
+  const btn = document.getElementById('btnCambiarPass');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const { error } = await withTimeout(sb.auth.updateUser({ password: p1 }));
+    btn.disabled = false; btn.textContent = 'Guardar nueva contraseña';
+    if(error) return showCambiarMsg('No se pudo actualizar. ' + (error.message || 'Intenta de nuevo.'), 'err');
+    showCambiarMsg('✓ Contraseña actualizada correctamente.', 'ok');
+    document.getElementById('newPass1').value = '';
+    document.getElementById('newPass2').value = '';
+    document.getElementById('passStrengthWrap').style.display = 'none';
+    setTimeout(() => closeCambiarPassModal(), 2000);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Guardar nueva contraseña';
+    showCambiarMsg(e.message === 'TIMEOUT' ? 'El servidor tardó. Intenta de nuevo.' : 'Error al actualizar.', 'err');
+  }
+}
+
+function showCambiarMsg(msg, type) {
+  const err = document.getElementById('cambiarMsg');
+  const ok  = document.getElementById('cambiarOkMsg');
+  if(type === 'ok') { ok.textContent = msg; ok.style.display = 'block'; err.style.display = 'none'; }
+  else { err.textContent = msg; err.style.display = 'block'; ok.style.display = 'none'; }
+}
+
+async function doEnviarEnlace() {
+  if(!S.user?.email) return;
+  if(noInternet()) return showToast('Sin conexión.', 'err');
+  const btn = document.getElementById('btnEnviarEnlace');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const { error } = await withTimeout(
+      sb.auth.resetPasswordForEmail(S.user.email, {
+        redirectTo: window.location.origin + window.location.pathname + '?reset=true'
+      })
+    );
+    btn.disabled = false; btn.textContent = 'Enviar enlace al correo';
+    const okEl = document.getElementById('cambiarCorreoOk');
+    if(error) return showToast('No se pudo enviar el correo.', 'err');
+    okEl.textContent = '✓ Enlace enviado a ' + S.user.email + '. Revisa tu bandeja (y spam).';
+    okEl.style.display = 'block';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Enviar enlace al correo';
+    showToast('Error al enviar. Intenta de nuevo.', 'err');
+  }
+}
+
+// Handle password reset redirect (when user comes back from email link)
+(function checkPasswordReset() {
+  const hash = window.location.hash;
+  if(hash.includes('type=recovery') || window.location.search.includes('reset=true')) {
+    // Supabase sets the session automatically from the URL hash
+    // Show the change password modal once the app loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if(document.getElementById('appScreen')?.classList.contains('show')) {
+          openCambiarPassModal();
+          showToast('Ingresa tu nueva contraseña', 'ok');
+        }
+      }, 1200);
+    });
+  }
+})();
 
 init();
 </script>
