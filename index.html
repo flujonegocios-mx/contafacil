@@ -123,6 +123,21 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .kpi-value { font-family:'Syne',sans-serif; font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
 .kpi-sub { font-size:0.71rem; margin-top:0.6rem; color:var(--ink-muted); display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap; }
 .kpi-delta { font-size:0.68rem; font-weight:700; padding:0.15rem 0.4rem; border-radius:4px; }
+.kpi-trend { font-size:0.72rem; font-weight:600; margin-top:0.45rem; display:flex; align-items:center; gap:0.25rem; }
+.kpi-trend.up { color:var(--green); }
+.kpi-trend.down { color:var(--red); }
+.kpi-trend.neutral { color:var(--ink-muted); }
+.progress-wrap { background:var(--surface2); border-radius:99px; height:8px; overflow:hidden; margin:0.6rem 0 0.4rem; }
+.progress-bar { height:100%; border-radius:99px; transition:width 0.6s ease; background:var(--accent); }
+.meta-empty { text-align:center; padding:1.5rem 0; color:var(--ink-muted); font-size:0.82rem; }
+.meta-empty button { margin-top:0.6rem; padding:0.45rem 1rem; background:var(--ink); color:#fff; border:none; border-radius:7px; font-family:'Instrument Sans',sans-serif; font-size:0.8rem; font-weight:600; cursor:pointer; display:block; margin:0.6rem auto 0; }
+.top3-item { display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0; border-bottom:1px solid rgba(226,221,212,0.5); }
+.top3-item:last-child { border-bottom:none; }
+.top3-rank { font-family:'Syne',sans-serif; font-size:0.72rem; font-weight:800; color:var(--ink-muted); width:18px; text-align:center; flex-shrink:0; }
+.top3-bar-wrap { flex:1; }
+.top3-label { font-size:0.8rem; font-weight:500; margin-bottom:0.3rem; display:flex; justify-content:space-between; }
+.top3-bar-bg { background:var(--surface2); border-radius:99px; height:5px; }
+.top3-bar-fill { height:5px; border-radius:99px; background:var(--red); opacity:0.7; transition:width 0.5s ease; }
 .kpi-delta.up { background:var(--green-bg); color:var(--green); }
 .kpi-delta.down { background:var(--red-bg); color:var(--red); }
 .text-green { color:var(--green); }
@@ -330,16 +345,19 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           <div class="kpi-top"><div class="kpi-label">Ingresos</div></div>
           <div class="kpi-value text-green" id="kpiIng">$0</div>
           <div class="kpi-sub" id="kpiIngSub">en el período</div>
+          <div class="kpi-trend" id="kpiIngTrend"></div>
         </div>
         <div class="kpi-card" style="border-left-color:var(--red)">
           <div class="kpi-top"><div class="kpi-label">Gastos</div></div>
           <div class="kpi-value text-red" id="kpiGas">$0</div>
           <div class="kpi-sub">en el período</div>
+          <div class="kpi-trend" id="kpiGasTrend"></div>
         </div>
         <div class="kpi-card" style="border-left-color:var(--gold)">
           <div class="kpi-top"><div class="kpi-label">Utilidad Bruta</div></div>
           <div class="kpi-value" id="kpiUtil">$0</div>
           <div class="kpi-sub" id="kpiMargen">Margen: 0%</div>
+          <div class="kpi-trend" id="kpiUtilTrend"></div>
         </div>
         <div class="kpi-card" style="border-left-color:var(--blue)">
           <div class="kpi-top"><div class="kpi-label">Movimientos</div></div>
@@ -350,6 +368,24 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <div class="charts-row">
         <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub">Últimos 6 meses</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
         <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución del período</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
+      </div>
+      <!-- Top 3 gastos + Meta de ingresos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem" id="insightRow">
+        <!-- Top 3 gastos -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:0.2rem">Top gastos del período</div>
+          <div class="card-sub" style="margin-bottom:1rem">Las 3 categorías donde más se gasta</div>
+          <div id="top3List"></div>
+        </div>
+        <!-- Meta de ingresos -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.2rem">
+            <div class="card-title">Meta de ingresos</div>
+            <button onclick="openMetaModal()" style="font-size:0.72rem;color:var(--accent);background:none;border:none;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-weight:600;padding:0">Editar</button>
+          </div>
+          <div class="card-sub" style="margin-bottom:1rem" id="metaSub">Define una meta mensual</div>
+          <div id="metaContent"></div>
+        </div>
       </div>
       <div class="bottom-row">
         <div class="add-tx-card"></div>
@@ -952,6 +988,121 @@ function fmt(n) { return '$'+Math.abs(n).toLocaleString('es-MX',{minimumFraction
 function fmtDate(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'}); }
 function fmtMonthLabel(ym) { const [y,m]=ym.split('-'); return new Date(y,m-1).toLocaleDateString('es-MX',{month:'short',year:'2-digit'}); }
 
+// ── META STATE ──
+let S_meta = { monto: 0 }; // persisted in localStorage key 'cf_meta_<bizId>'
+
+function loadMeta() {
+  if(!S.activeBizId) return;
+  try { const saved = localStorage.getItem('cf_meta_'+S.activeBizId); S_meta = saved ? JSON.parse(saved) : {monto:0}; } catch(e) { S_meta={monto:0}; }
+}
+function saveMeta(monto) {
+  S_meta = {monto};
+  try { localStorage.setItem('cf_meta_'+S.activeBizId, JSON.stringify(S_meta)); } catch(e){}
+}
+
+function openMetaModal() {
+  const cur = S_meta.monto || '';
+  const val = prompt('¿Cuál es tu meta de ingresos para este mes?\nIngresa el monto en pesos (sin signos):', cur||'');
+  if(val === null) return;
+  const n = parseFloat(val.replace(/[^0-9.]/g,''));
+  if(isNaN(n) || n <= 0) return showToast('Ingresa un monto válido', 'err');
+  saveMeta(n);
+  renderDashboard();
+  showToast('✅ Meta guardada', 'ok');
+}
+
+function getPrevPeriodTotals() {
+  const now = new Date();
+  let prevStart, prevEnd;
+  if(S.period === 'mes') {
+    const pm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    prevStart = `${pm.getFullYear()}-${String(pm.getMonth()+1).padStart(2,'0')}`;
+    prevEnd = prevStart;
+  } else if(S.period === 'trim') {
+    const q = Math.floor(now.getMonth()/3);
+    const pq = q === 0 ? 3 : q-1;
+    const py = q === 0 ? now.getFullYear()-1 : now.getFullYear();
+    prevStart = `${py}-${String(pq*3+1).padStart(2,'0')}`;
+    prevEnd = `${py}-${String(Math.min(pq*3+3,12)).padStart(2,'0')}`;
+  } else {
+    prevStart = `${now.getFullYear()-1}-01`;
+    prevEnd = `${now.getFullYear()-1}-12`;
+  }
+  const prev = S.transactions.filter(t => {
+    const ym = t.fecha.substring(0,7);
+    return ym >= prevStart && ym <= prevEnd;
+  });
+  return {
+    ing: prev.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0),
+    gas: prev.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0),
+    util: prev.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0) - prev.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0),
+  };
+}
+
+function renderTrend(elId, current, previous) {
+  const el = document.getElementById(elId);
+  if(!el) return;
+  if(previous === 0) { el.innerHTML=''; return; }
+  const diff = current - previous;
+  const pct = Math.abs((diff/previous)*100).toFixed(1);
+  if(diff > 0) {
+    el.className='kpi-trend up';
+    el.innerHTML=`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 8L5 2L8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> +${pct}% vs período anterior`;
+  } else if(diff < 0) {
+    el.className='kpi-trend down';
+    el.innerHTML=`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2L5 8L8 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> −${pct}% vs período anterior`;
+  } else {
+    el.className='kpi-trend neutral';
+    el.innerHTML=`— igual que período anterior`;
+  }
+}
+
+function renderTop3(filtered) {
+  const catMap={};
+  filtered.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'otro'; catMap[k]=(catMap[k]||0)+t.monto;});
+  const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const el = document.getElementById('top3List');
+  if(!el) return;
+  if(!sorted.length) { el.innerHTML=`<div style="color:var(--ink-muted);font-size:0.82rem;padding:0.75rem 0">Sin gastos en este período</div>`; return; }
+  const max = sorted[0][1];
+  el.innerHTML = sorted.map(([cat,val],i)=>`
+    <div class="top3-item">
+      <div class="top3-rank">${i+1}</div>
+      <div class="top3-bar-wrap">
+        <div class="top3-label"><span>${CAT_LABELS[cat]||cat}</span><span style="color:var(--red);font-weight:700">${fmt(val)}</span></div>
+        <div class="top3-bar-bg"><div class="top3-bar-fill" style="width:${((val/max)*100).toFixed(1)}%;opacity:${0.9-i*0.2}"></div></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderMeta(ing) {
+  const el = document.getElementById('metaContent');
+  const sub = document.getElementById('metaSub');
+  if(!el) return;
+  loadMeta();
+  const meta = S_meta.monto;
+  if(!meta) {
+    el.innerHTML=`<div class="meta-empty">Sin meta definida<button onclick="openMetaModal()">+ Definir meta</button></div>`;
+    if(sub) sub.textContent = 'Define una meta mensual';
+    return;
+  }
+  const pct = Math.min((ing/meta)*100, 100);
+  const pctDisplay = ((ing/meta)*100).toFixed(1);
+  const faltante = meta - ing;
+  const color = pct>=100 ? 'var(--green)' : pct>=60 ? 'var(--gold)' : 'var(--red)';
+  if(sub) sub.textContent = S.period==='mes' ? 'Meta del mes actual' : 'Meta de ingresos';
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.1rem">
+      <span style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${color}">${fmt(ing)}</span>
+      <span style="font-size:0.78rem;color:var(--ink-muted)">de ${fmt(meta)}</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${color}"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.73rem;color:var(--ink-muted)">
+      <span style="font-weight:700;color:${color}">${pctDisplay}% completado</span>
+      <span>${faltante>0?`Faltan ${fmt(faltante)}`:'🎉 Meta alcanzada'}</span>
+    </div>`;
+}
+
 function renderDashboard() {
   const biz = S.businesses.find(b=>b.id===S.activeBizId);
   document.getElementById('dashTitle').textContent = biz?.name||'Sin negocio';
@@ -968,6 +1119,14 @@ function renderDashboard() {
   document.getElementById('kpiMov').textContent=filtered.length;
   document.getElementById('kpiMovPeriod').textContent=filtered.length;
   document.getElementById('kpiMovTotal').textContent=S.transactions.length;
+  // Trends
+  const prev = getPrevPeriodTotals();
+  renderTrend('kpiIngTrend', ing, prev.ing);
+  renderTrend('kpiGasTrend', gas, prev.gas);
+  renderTrend('kpiUtilTrend', util, prev.util);
+  // Insights
+  renderTop3(filtered);
+  renderMeta(ing);
   renderCharts(); renderRecent(filtered);
 }
 
