@@ -911,17 +911,69 @@ async function init() {
   }
 }
 
+// ── ERROR HANDLING HELPERS ──────────────────────────────────────
+function noInternet() { return !navigator.onLine; }
+
+function withTimeout(promise, ms=10000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+  ]);
+}
+
+function loginErrMsg(error) {
+  if (noInternet()) return 'Sin conexión a internet. Revisa tu red e intenta de nuevo.';
+  const msg = error?.message?.toLowerCase() || '';
+  if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('email not confirmed'))
+    return 'Correo o contraseña incorrectos. Verifica tus datos.';
+  if (msg.includes('too many') || msg.includes('rate limit'))
+    return 'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.';
+  if (msg.includes('timeout') || error?.message === 'TIMEOUT')
+    return 'El servidor tardó demasiado. Revisa tu conexión e intenta de nuevo.';
+  return 'No se pudo iniciar sesión. Intenta de nuevo en unos momentos.';
+}
+
+function txErrMsg(error) {
+  if (noInternet()) return 'Sin conexión. Reconéctate e intenta guardar de nuevo.';
+  if (error?.message === 'TIMEOUT') return 'El servidor tardó demasiado. Intenta de nuevo.';
+  return 'No se pudo guardar. Verifica tu conexión e intenta de nuevo.';
+}
+
+// Barra de estado de conexión
+(function setupConnectionBar() {
+  const bar = document.createElement('div');
+  bar.id = 'connBar';
+  bar.style.cssText = 'position:fixed;top:0;left:260px;right:0;z-index:9999;padding:0.45rem 1.25rem;font-size:0.78rem;font-weight:600;text-align:center;transform:translateY(-100%);transition:transform .35s ease;pointer-events:none';
+  document.body.appendChild(bar);
+  function show(online) {
+    bar.textContent = online ? '✓ Conexión restaurada' : '⚠ Sin conexión a internet — los cambios no se guardarán';
+    bar.style.background = online ? '#1e7a45' : '#c0392b';
+    bar.style.color = '#fff';
+    bar.style.transform = 'translateY(0)';
+    if (online) setTimeout(() => bar.style.transform = 'translateY(-100%)', 2500);
+  }
+  window.addEventListener('offline', () => show(false));
+  window.addEventListener('online', () => show(true));
+})();
+
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
-  if (!email || !pass) return showAuthMsg('Completa todos los campos');
+  if (!email) return showAuthMsg('Ingresa tu correo electrónico.');
+  if (!pass) return showAuthMsg('Ingresa tu contraseña.');
+  if (noInternet()) return showAuthMsg('Sin conexión a internet. Revisa tu red e intenta de nuevo.');
   const btn = document.getElementById('btnLogin');
   btn.disabled = true; btn.textContent = 'Entrando...';
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  btn.disabled = false; btn.textContent = 'Entrar →';
-  if (error) return showAuthMsg('Correo o contraseña incorrectos');
-  S.user = data.user;
-  await checkAccessAndEnter();
+  try {
+    const { data, error } = await withTimeout(sb.auth.signInWithPassword({ email, password: pass }));
+    btn.disabled = false; btn.textContent = 'Entrar →';
+    if (error) return showAuthMsg(loginErrMsg(error));
+    S.user = data.user;
+    await checkAccessAndEnter();
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Entrar →';
+    showAuthMsg(loginErrMsg(e));
+  }
 }
 
 async function checkAccessAndEnter() {
@@ -983,14 +1035,25 @@ function closeBizModal() { document.getElementById('bizModal').classList.remove(
 
 async function createBiz() {
   const name = document.getElementById('bizName').value.trim();
-  if (!name) return showToast('Ingresa el nombre', 'err');
+  if (!name) return showToast('Escribe el nombre del negocio.', 'err');
+  if (noInternet()) return showToast('Sin conexión. No se puede crear el negocio ahora.', 'err');
   const type = document.getElementById('bizType').value;
-  const { data, error } = await sb.from('businesses').insert({ name, type, user_id: S.user.id }).select().single();
-  if (error) return showToast('Error al crear negocio', 'err');
-  S.businesses.push(data); S.activeBizId = data.id; S.transactions = [];
-  closeBizModal(); renderBizList(); renderDashboard();
-  showToast(`✅ "${name}" creado`, 'ok');
-  document.getElementById('bizName').value = '';
+  try {
+    const { data, error } = await withTimeout(
+      sb.from('businesses').insert({ name, type, user_id: S.user.id }).select().single()
+    );
+    if (error) {
+      if (error.message?.toLowerCase().includes('duplicate') || error.code === '23505')
+        return showToast('Ya tienes un negocio con ese nombre.', 'err');
+      return showToast('No se pudo crear el negocio. Intenta de nuevo.', 'err');
+    }
+    S.businesses.push(data); S.activeBizId = data.id; S.transactions = [];
+    closeBizModal(); renderBizList(); renderDashboard();
+    showToast(`✅ "${name}" creado`, 'ok');
+    document.getElementById('bizName').value = '';
+  } catch(e) {
+    showToast(e.message==='TIMEOUT' ? 'El servidor tardó demasiado. Intenta de nuevo.' : 'No se pudo crear el negocio.', 'err');
+  }
 }
 
 async function selectBiz(id) { S.activeBizId = id; await loadTransactions(); renderBizList(); renderDashboard(); }
@@ -1030,33 +1093,48 @@ function setTxType(type) {
 
 async function addTransaction() {
   const concepto = document.getElementById('txConcepto').value.trim();
-  const monto = parseFloat(document.getElementById('txMonto').value);
+  const montoRaw = document.getElementById('txMonto').value;
+  const monto = parseFloat(montoRaw);
   const categoria = document.getElementById('txCategoria').value;
   const fecha = document.getElementById('txFecha').value;
-  if (!concepto) return showToast('Escribe un concepto', 'err');
-  if (!monto || monto<=0) return showToast('Monto inválido', 'err');
-  if (!fecha) return showToast('Selecciona una fecha', 'err');
-  if (!S.activeBizId) return showToast('Crea un negocio primero', 'err');
+  if (!concepto) return showToast('Escribe un concepto para el movimiento.', 'err');
+  if (!montoRaw) return showToast('Ingresa el monto.', 'err');
+  if (isNaN(monto) || monto <= 0) return showToast('El monto debe ser mayor a cero.', 'err');
+  if (!fecha) return showToast('Selecciona la fecha del movimiento.', 'err');
+  if (!S.activeBizId) return showToast('Primero crea un negocio en el menú lateral.', 'err');
+  if (noInternet()) return showToast('Sin conexión. Reconéctate e intenta de nuevo.', 'err');
   const btn = document.getElementById('btnAddTx');
   btn.disabled=true; btn.textContent='Guardando...';
-  const { data, error } = await sb.from('transactions').insert({ business_id:S.activeBizId, user_id:S.user.id, tipo:txType, concepto, monto, categoria, fecha }).select().single();
-  btn.disabled=false; btn.textContent='Guardar movimiento';
-  if (error) return showToast('Error al guardar', 'err');
-  S.transactions.unshift(data);
-  document.getElementById('txConcepto').value='';
-  document.getElementById('txMonto').value='';
-  closeTxModal();
-  renderDashboard();
-  showToast(`✅ ${txType==='ingreso'?'Ingreso':'Gasto'} guardado`, 'ok');
+  try {
+    const { data, error } = await withTimeout(
+      sb.from('transactions').insert({ business_id:S.activeBizId, user_id:S.user.id, tipo:txType, concepto, monto, categoria, fecha }).select().single()
+    );
+    btn.disabled=false; btn.textContent='Guardar movimiento';
+    if (error) return showToast(txErrMsg(error), 'err');
+    S.transactions.unshift(data);
+    document.getElementById('txConcepto').value='';
+    document.getElementById('txMonto').value='';
+    closeTxModal();
+    renderDashboard();
+    showToast(`✅ ${txType==='ingreso'?'Ingreso':'Gasto'} guardado`, 'ok');
+  } catch(e) {
+    btn.disabled=false; btn.textContent='Guardar movimiento';
+    showToast(txErrMsg(e), 'err');
+  }
 }
 
 async function deleteTransaction(id) {
-  const { error } = await sb.from('transactions').delete().eq('id', id);
-  if (error) return showToast('Error al eliminar', 'err');
-  S.transactions = S.transactions.filter(t => t.id!==id);
-  renderDashboard();
-  if (document.getElementById('page-historial').classList.contains('active')) renderHistorial();
-  showToast('Eliminado');
+  if (noInternet()) return showToast('Sin conexión. No se puede eliminar ahora.', 'err');
+  try {
+    const { error } = await withTimeout(sb.from('transactions').delete().eq('id', id));
+    if (error) return showToast('No se pudo eliminar. Intenta de nuevo.', 'err');
+    S.transactions = S.transactions.filter(t => t.id!==id);
+    renderDashboard();
+    if (document.getElementById('page-historial').classList.contains('active')) renderHistorial();
+    showToast('Movimiento eliminado');
+  } catch(e) {
+    showToast(e.message==='TIMEOUT' ? 'El servidor tardó demasiado. Intenta de nuevo.' : 'No se pudo eliminar. Intenta de nuevo.', 'err');
+  }
 }
 
 // Filters & render
@@ -1586,8 +1664,12 @@ async function runImport() {
   const catIdx = parseInt(document.getElementById('map_categoria')?.value || -1);
   const tipoDefault = document.getElementById('map_tipo_default')?.value || 'ingreso';
 
-  if (fechaIdx < 0 || conceptoIdx < 0 || montoIdx < 0) return showToast('Conecta los campos obligatorios (Fecha, Concepto, Monto)', 'err');
-  if (!S.activeBizId) return showToast('Selecciona un negocio primero', 'err');
+  if (fechaIdx < 0 || conceptoIdx < 0 || montoIdx < 0)
+    return showToast('Conecta los 3 campos obligatorios: Fecha, Concepto y Monto.', 'err');
+  if (!S.activeBizId)
+    return showToast('Selecciona un negocio antes de importar.', 'err');
+  if (noInternet())
+    return showToast('Sin conexión a internet. Reconéctate e intenta de nuevo.', 'err');
 
   const btn = document.querySelector('#importStep2 .btn-submit');
   btn.disabled = true; btn.textContent = 'Importando...';
@@ -1624,8 +1706,16 @@ async function runImport() {
     }
 
     // 3. Insert in chunks of 100
+    let insertErr = false;
     for (let i = 0; i < batch.length; i += 100) {
-      await sb.from('transactions').insert(batch.slice(i, i+100));
+      try {
+        const { error: insErr } = await withTimeout(sb.from('transactions').insert(batch.slice(i, i+100)), 15000);
+        if (insErr) { insertErr = true; break; }
+      } catch(e) { insertErr = true; break; }
+    }
+    if (insertErr) {
+      btn.disabled = false; btn.textContent = 'Importar movimientos';
+      return showToast('Error al guardar los registros. Revisa tu conexión e intenta de nuevo.', 'err');
     }
     await loadTransactions();
   }
@@ -1633,7 +1723,8 @@ async function runImport() {
   btn.disabled = false;
   document.getElementById('importStep2').style.display = 'none';
   document.getElementById('importStep3').style.display = 'block';
-  document.getElementById('importSummary').textContent = `Se importaron ${ok} movimientos correctamente.${skip > 0 ? ` Se omitieron ${skip} filas con datos incompletos.` : ''}`;
+  const skipMsg = skip > 0 ? ` Se omitieron ${skip} fila${skip>1?'s':''} por datos incompletos (fecha inválida, monto vacío o cero).` : '';
+  document.getElementById('importSummary').textContent = `✅ Se importaron ${ok} movimiento${ok!==1?'s':''} correctamente.${skipMsg}`;
   renderDashboard();
 }
 
