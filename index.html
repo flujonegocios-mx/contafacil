@@ -374,7 +374,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     </div>
 
     <!-- Historial -->
-    <div class="page" id="page-historial" style="padding-bottom:110px">
+    <div class="page" id="page-historial">
       <div class="topbar">
         <div>
           <div class="page-title">Historial completo</div>
@@ -391,10 +391,23 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           </div>
         </div>
         <div id="importsList"><div style="color:var(--ink-muted);font-size:0.83rem">Cargando...</div></div>
-        <!-- Pills de meses debajo de importaciones -->
-        <div style="margin-top:1rem;padding-top:0.85rem;border-top:1px solid var(--border)">
-          <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);margin-bottom:0.5rem">Filtrar por mes</div>
-          <div id="histMonthPills" style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent"></div>
+        <!-- Filtros dentro del card -->
+        <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:0.7rem">
+          <!-- Fila tipo + limpiar -->
+          <div style="display:flex;align-items:center;gap:1rem">
+            <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);white-space:nowrap">Tipo</span>
+            <div style="display:flex;background:var(--surface2);border-radius:7px;padding:2px;gap:2px">
+              <button id="hf-todos" onclick="setHistTipo('todos')" class="hf-btn hf-active">Todos</button>
+              <button id="hf-ingreso" onclick="setHistTipo('ingreso')" class="hf-btn">Ingresos</button>
+              <button id="hf-gasto" onclick="setHistTipo('gasto')" class="hf-btn">Gastos</button>
+            </div>
+            <button onclick="limpiarFiltrosHist()" style="font-size:0.73rem;color:var(--ink-muted);background:none;border:1px solid var(--border);border-radius:6px;padding:0.28rem 0.7rem;cursor:pointer;font-family:'Instrument Sans',sans-serif;margin-left:auto;transition:all .15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-muted)'">Limpiar filtros</button>
+          </div>
+          <!-- Fila meses con scroll horizontal -->
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted);white-space:nowrap">Meses</span>
+            <div id="histMonthPills" style="display:flex;gap:0.35rem;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;flex:1"></div>
+          </div>
         </div>
       </div>
 
@@ -403,21 +416,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <div id="histList" style="display:flex;flex-direction:column"></div>
       </div>
 
-      <!-- Barra de filtros pegada abajo -->
-      <div id="histFilterBar" style="position:fixed;bottom:0;left:260px;right:0;background:var(--surface);border-top:1.5px solid var(--border);padding:0.75rem 2.5rem;z-index:40;display:flex;flex-direction:column;gap:0.55rem;box-shadow:0 -4px 20px rgba(0,0,0,0.06)">
-        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:0.5rem">
-            <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-muted)">Tipo</span>
-            <div style="display:flex;background:var(--surface2);border-radius:7px;padding:2px;gap:2px">
-              <button id="hf-todos" onclick="setHistTipo('todos')" class="hf-btn hf-active">Todos</button>
-              <button id="hf-ingreso" onclick="setHistTipo('ingreso')" class="hf-btn">Ingresos</button>
-              <button id="hf-gasto" onclick="setHistTipo('gasto')" class="hf-btn">Gastos</button>
-            </div>
-          </div>
-          <button onclick="limpiarFiltrosHist()" style="font-size:0.73rem;color:var(--ink-muted);background:none;border:1px solid var(--border);border-radius:6px;padding:0.28rem 0.7rem;cursor:pointer;font-family:'Instrument Sans',sans-serif;margin-left:auto;transition:all .15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink-muted)'">Limpiar filtros</button>
-        </div>
 
-      </div>
     </div>
 
     <!-- Importar -->
