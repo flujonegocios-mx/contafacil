@@ -63,7 +63,8 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .app-screen { display:none; min-height:100vh; }
 .app-screen.show { display:flex; }
 
-aside.sidebar { width:260px; background:var(--sidebar-bg); display:flex; flex-direction:column; gap:0; padding:1.25rem 1rem; position:fixed; top:0; left:0; height:100vh; overflow-y:auto; z-index:40; }
+aside.sidebar { width:260px; background:var(--sidebar-bg); display:none; flex-direction:column; gap:0; padding:1.25rem 1rem; position:fixed; top:0; left:0; height:100vh; overflow-y:auto; z-index:40; }
+aside.sidebar.visible { display:flex; }
 .sidebar-logo { display:flex; align-items:center; gap:0.6rem; padding-bottom:1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); }
 .sidebar-logo-icon { width:32px; height:32px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
 .sidebar-logo-text { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:600; color:#fff; letter-spacing:-0.01em; }
@@ -120,7 +121,8 @@ aside.sidebar { width:260px; background:var(--sidebar-bg); display:flex; flex-di
 
 .bottom-row { display:grid; grid-template-columns:1fr; gap:1.25rem; }
 .add-tx-card { display:none; }
-.fab { position:fixed; bottom:2rem; right:2rem; width:52px; height:52px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-size:1.5rem; cursor:pointer; box-shadow:0 4px 20px rgba(45,106,79,0.4); transition:all 0.2s; z-index:50; display:flex; align-items:center; justify-content:center; }
+.fab { position:fixed; bottom:2rem; right:2rem; width:52px; height:52px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-size:1.5rem; cursor:pointer; box-shadow:0 4px 20px rgba(45,106,79,0.4); transition:all 0.2s; z-index:50; display:none; align-items:center; justify-content:center; }
+.fab.visible { display:flex; }
 .fab:hover { transform:scale(1.08); box-shadow:0 6px 24px rgba(45,106,79,0.5); }
 .tx-modal { max-width:460px; }
 
@@ -794,6 +796,8 @@ async function checkAccessAndEnter() {
 
 async function enterApp(profile) {
   document.getElementById('appScreen').classList.add('show');
+  document.querySelector('.sidebar').classList.add('visible');
+  document.querySelector('.fab').classList.add('visible');
   const name = profile?.name || S.user.user_metadata?.name || S.user.email.split('@')[0];
   document.getElementById('userAvatar').textContent = name[0].toUpperCase();
   document.getElementById('userName').textContent = name;
@@ -813,6 +817,8 @@ async function doLogout() {
   document.getElementById('appScreen').classList.remove('show');
   document.getElementById('blockedScreen').classList.remove('show');
   document.getElementById('authScreen').classList.add('show');
+  document.querySelector('.sidebar').classList.remove('visible');
+  document.querySelector('.fab').classList.remove('visible');
 }
 
 // Businesses
