@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Playfair+Display:wght@600&display=swap');
 
 :root {
   --bg: #f8f6f1;
@@ -40,7 +40,6 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:#4ade80; border-radius:50%; animation:spin 0.8s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 
-/* Auth */
 .auth-screen { min-height:100vh; display:none; align-items:center; justify-content:center; background:linear-gradient(135deg,#1c1a17 0%,#2d3a2e 100%); padding:1.5rem; }
 .auth-screen.show { display:flex; }
 .auth-card { background:var(--surface); border-radius:20px; padding:2.5rem; width:100%; max-width:420px; box-shadow:0 24px 80px rgba(0,0,0,0.3); animation:fadeUp 0.5s ease; }
@@ -49,58 +48,43 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .auth-logo h1 { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
 .auth-logo h1 span { color:var(--accent); }
 .auth-logo p { color:var(--ink-muted); font-size:0.85rem; margin-top:0.3rem; }
-
+.auth-msg { font-size:0.8rem; color:var(--red); min-height:1.2rem; margin-bottom:0.5rem; text-align:center; }
 .form-group { margin-bottom:1rem; }
 .form-group label { display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-muted); margin-bottom:0.4rem; }
-.form-group input { width:100%; padding:0.7rem 1rem; border:1.5px solid var(--border); border-radius:8px; font-family:'Instrument Sans',sans-serif; font-size:0.9rem; color:var(--ink); background:var(--surface); outline:none; transition:border-color 0.15s,box-shadow 0.15s; }
-.form-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,106,79,0.1); }
+.form-group input, .form-group select, .form-group textarea { width:100%; padding:0.7rem 1rem; border:1.5px solid var(--border); border-radius:8px; font-family:'Instrument Sans',sans-serif; font-size:0.9rem; color:var(--ink); background:var(--surface); outline:none; transition:border-color 0.15s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--accent); }
+.btn-auth { width:100%; padding:0.75rem; background:var(--accent); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.15s; }
+.btn-auth:hover { background:#235a40; }
+.btn-auth:disabled { opacity:0.6; cursor:not-allowed; }
 
-.btn-primary { width:100%; padding:0.8rem; background:var(--ink); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.15s; margin-top:0.5rem; }
-.btn-primary:hover { background:#2d2a25; transform:translateY(-1px); }
-.btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-
-.auth-msg { padding:0.6rem 0.9rem; border-radius:8px; font-size:0.82rem; margin-bottom:1rem; display:none; line-height:1.5; }
-.auth-msg.error { background:var(--red-bg); border:1px solid #f5c6c2; color:var(--red); }
-.auth-msg.show { display:block; }
-
-/* Blocked screen */
-.blocked-screen { min-height:100vh; display:none; align-items:center; justify-content:center; background:linear-gradient(135deg,#1c1a17 0%,#2d3a2e 100%); padding:1.5rem; }
+.blocked-screen { min-height:100vh; display:none; align-items:center; justify-content:center; background:linear-gradient(135deg,#1c1a17 0%,#2d3a2e 100%); }
 .blocked-screen.show { display:flex; }
-.blocked-card { background:var(--surface); border-radius:20px; padding:2.5rem; width:100%; max-width:420px; text-align:center; }
-.blocked-icon { font-size:3rem; margin-bottom:1rem; }
-.blocked-card h2 { font-family:'Syne',sans-serif; font-size:1.2rem; margin-bottom:0.75rem; }
-.blocked-card p { color:var(--ink-muted); font-size:0.85rem; line-height:1.6; }
-.btn-back { margin-top:1.5rem; padding:0.7rem 1.5rem; background:var(--ink); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:600; cursor:pointer; }
 
-/* App */
-.app { display:none; min-height:100vh; }
-.app.show { display:flex; }
+.app-screen { display:none; min-height:100vh; }
+.app-screen.show { display:flex; }
 
-.sidebar { width:260px; background:var(--sidebar-bg); padding:1.5rem 1.25rem; display:flex; flex-direction:column; gap:1.5rem; position:fixed; height:100vh; overflow-y:auto; z-index:20; }
-.sidebar-logo { display:flex; align-items:center; gap:0.7rem; padding-bottom:1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); }
-.sidebar-logo-icon { width:34px; height:34px; background:var(--green-bg); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; }
-.sidebar-logo-text { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; color:#fff; }
+aside.sidebar { width:260px; background:var(--sidebar-bg); display:flex; flex-direction:column; gap:0; padding:1.25rem 1rem; position:fixed; top:0; left:0; height:100vh; overflow-y:auto; z-index:40; }
+.sidebar-logo { display:flex; align-items:center; gap:0.6rem; padding-bottom:1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); }
+.sidebar-logo-icon { width:32px; height:32px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.sidebar-logo-text { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:600; color:#fff; letter-spacing:-0.01em; }
 .sidebar-logo-text span { color:#4ade80; }
-
-.sidebar-user { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.75rem; background:rgba(255,255,255,0.05); border-radius:8px; }
-.user-avatar { width:30px; height:30px; border-radius:50%; background:#4ade80; color:#1c1a17; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0; }
-.user-name { font-size:0.82rem; color:rgba(255,255,255,0.8); font-weight:500; }
-.user-email { font-size:0.7rem; color:rgba(255,255,255,0.4); }
-
-.sidebar-section-title { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.12em; color:rgba(255,255,255,0.3); margin-bottom:0.5rem; }
-.nav-item { display:flex; align-items:center; gap:0.65rem; padding:0.6rem 0.75rem; border-radius:8px; cursor:pointer; transition:background 0.15s; color:rgba(255,255,255,0.6); font-size:0.85rem; border:none; background:none; width:100%; text-align:left; font-family:'Instrument Sans',sans-serif; }
-.nav-item:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.9); }
-.nav-item.active { background:rgba(74,222,128,0.15); color:#4ade80; font-weight:600; }
-.nav-icon { font-size:1rem; width:20px; text-align:center; }
-
-.biz-item { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:8px; cursor:pointer; transition:background 0.15s; color:rgba(255,255,255,0.6); font-size:0.82rem; }
-.biz-item:hover { background:rgba(255,255,255,0.06); }
-.biz-item.active { background:rgba(74,222,128,0.12); color:#4ade80; }
-.biz-avatar { width:26px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; flex-shrink:0; }
-.btn-new-biz { display:flex; align-items:center; gap:0.5rem; padding:0.55rem 0.75rem; border:1px dashed rgba(255,255,255,0.15); border-radius:8px; background:none; color:rgba(255,255,255,0.35); font-family:'Instrument Sans',sans-serif; font-size:0.8rem; cursor:pointer; transition:all 0.15s; width:100%; margin-top:0.3rem; }
+.sidebar-user { display:flex; align-items:center; gap:0.75rem; background:rgba(255,255,255,0.05); border-radius:10px; padding:0.75rem; }
+.user-avatar { width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; flex-shrink:0; }
+.user-name { font-size:0.84rem; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; font-family:'DM Sans',sans-serif; }
+.user-email { font-size:0.71rem; color:rgba(255,255,255,0.35); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; font-family:'DM Sans',sans-serif; }
+.sidebar-section-title { font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:rgba(255,255,255,0.2); margin-bottom:0.4rem; margin-top:1.25rem; font-family:'DM Sans',sans-serif; padding:0 0.25rem; }
+.nav-item { display:flex; align-items:center; gap:0.6rem; width:100%; padding:0.55rem 0.75rem; border:none; background:none; color:rgba(255,255,255,0.45); font-family:'DM Sans',sans-serif; font-size:0.83rem; cursor:pointer; border-radius:8px; transition:all 0.15s; text-align:left; font-weight:400; letter-spacing:0; }
+.nav-item:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.85); }
+.nav-item.active { background:rgba(255,255,255,0.12); color:#fff; font-weight:600; }
+.nav-icon { font-size:0.9rem; width:18px; text-align:center; }
+.nav-biz-item { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.45rem 0.75rem; border:none; background:none; color:rgba(255,255,255,0.4); font-family:'Instrument Sans',sans-serif; font-size:0.8rem; cursor:pointer; border-radius:8px; transition:all 0.12s; text-align:left; }
+.nav-biz-item:hover { color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.05); }
+.nav-biz-item.active { color:#fff; font-weight:600; }
+.nav-biz-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+.btn-new-biz { display:flex; align-items:center; gap:0.5rem; padding:0.55rem 0.75rem; border:1px dashed rgba(255,255,255,0.15); border-radius:8px; background:none; color:rgba(255,255,255,0.3); font-family:'DM Sans',sans-serif; font-size:0.79rem; cursor:pointer; transition:all 0.15s; width:100%; margin-top:0.3rem; }
 .btn-new-biz:hover { border-color:#4ade80; color:#4ade80; }
 .sidebar-footer { margin-top:auto; border-top:1px solid rgba(255,255,255,0.08); padding-top:1rem; }
-.btn-logout { display:flex; align-items:center; gap:0.5rem; padding:0.55rem 0.75rem; background:none; border:none; color:rgba(255,255,255,0.35); font-family:'Instrument Sans',sans-serif; font-size:0.8rem; cursor:pointer; transition:color 0.15s; width:100%; }
+.btn-logout { display:flex; align-items:center; gap:0.5rem; padding:0.55rem 0.75rem; background:none; border:none; color:rgba(255,255,255,0.3); font-family:'DM Sans',sans-serif; font-size:0.79rem; cursor:pointer; transition:color 0.15s; width:100%; }
 .btn-logout:hover { color:#f87171; }
 
 .main { margin-left:260px; flex:1; padding:2rem 2.5rem; max-width:calc(100vw - 260px); }
@@ -115,12 +99,16 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .period-btn.active { background:var(--ink); color:#fff; font-weight:600; }
 
 .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-.kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.4rem; }
-.kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.6rem; }
-.kpi-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-muted); }
-.kpi-icon { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; }
-.kpi-value { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; letter-spacing:-0.02em; }
-.kpi-sub { font-size:0.73rem; margin-top:0.25rem; color:var(--ink-muted); }
+.kpi-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--border); border-radius:var(--radius); padding:1.4rem 1.5rem; transition:box-shadow 0.15s; }
+.kpi-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+.kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; }
+.kpi-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--ink-muted); font-weight:600; }
+.kpi-icon { display:none; }
+.kpi-value { font-family:'Syne',sans-serif; font-size:1.7rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+.kpi-sub { font-size:0.72rem; margin-top:0.5rem; color:var(--ink-muted); }
+.kpi-delta { font-size:0.68rem; font-weight:700; padding:0.15rem 0.4rem; border-radius:4px; }
+.kpi-delta.up { background:var(--green-bg); color:var(--green); }
+.kpi-delta.down { background:var(--red-bg); color:var(--red); }
 .text-green { color:var(--green); }
 .text-red { color:var(--red); }
 
@@ -128,18 +116,13 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.4rem; }
 .card-title { font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:700; margin-bottom:0.2rem; }
 .card-sub { font-size:0.73rem; color:var(--ink-muted); margin-bottom:1.1rem; }
-.chart-wrap { position:relative; height:190px; }
+.chart-wrap { position:relative; height:220px; }
 
-.bottom-row { display:grid; grid-template-columns:1fr 1.5fr; gap:1.25rem; }
-.add-tx-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.4rem; }
-.tx-type-toggle { display:flex; background:var(--surface2); border-radius:8px; padding:3px; margin-bottom:1rem; }
-.tx-type-btn { flex:1; padding:0.5rem; border:none; background:none; border-radius:6px; font-family:'Instrument Sans',sans-serif; font-size:0.85rem; cursor:pointer; transition:all 0.15s; font-weight:500; color:var(--ink-muted); }
-.tx-type-btn.ingreso.active { background:var(--green); color:#fff; font-weight:700; }
-.tx-type-btn.gasto.active { background:var(--red); color:#fff; font-weight:700; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
-.btn-submit { width:100%; padding:0.75rem; background:var(--accent); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.15s; margin-top:0.75rem; }
-.btn-submit:hover { background:#235a40; transform:translateY(-1px); }
-.btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+.bottom-row { display:grid; grid-template-columns:1fr; gap:1.25rem; }
+.add-tx-card { display:none; }
+.fab { position:fixed; bottom:2rem; right:2rem; width:52px; height:52px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-size:1.5rem; cursor:pointer; box-shadow:0 4px 20px rgba(45,106,79,0.4); transition:all 0.2s; z-index:50; display:flex; align-items:center; justify-content:center; }
+.fab:hover { transform:scale(1.08); box-shadow:0 6px 24px rgba(45,106,79,0.5); }
+.tx-modal { max-width:460px; }
 
 .tx-list { display:flex; flex-direction:column; gap:0.4rem; max-height:320px; overflow-y:auto; }
 .tx-list::-webkit-scrollbar { width:4px; }
@@ -185,6 +168,15 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .btn-outline { padding:0.65rem 1rem; border:1.5px solid var(--border); border-radius:8px; background:none; font-family:'Instrument Sans',sans-serif; font-size:0.85rem; cursor:pointer; color:var(--ink-muted); }
 .btn-full { flex:1; padding:0.65rem; background:var(--ink); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:0.88rem; cursor:pointer; }
 
+.tx-type-toggle { display:flex; background:var(--surface2); border-radius:8px; padding:3px; margin-bottom:1rem; }
+.tx-type-btn { flex:1; padding:0.5rem; border:none; background:none; border-radius:6px; font-family:'Instrument Sans',sans-serif; font-size:0.85rem; cursor:pointer; transition:all 0.15s; font-weight:500; color:var(--ink-muted); }
+.tx-type-btn.ingreso.active { background:var(--green); color:#fff; font-weight:700; }
+.tx-type-btn.gasto.active { background:var(--red); color:#fff; font-weight:700; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+.btn-submit { width:100%; padding:0.75rem; background:var(--accent); color:#fff; border:none; border-radius:8px; font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.15s; margin-top:0.75rem; }
+.btn-submit:hover { background:#235a40; transform:translateY(-1px); }
+.btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
 .toast { position:fixed; bottom:1.5rem; right:1.5rem; background:var(--ink); color:#fff; padding:0.65rem 1.1rem; border-radius:8px; font-size:0.82rem; z-index:300; transform:translateY(80px); opacity:0; transition:all 0.3s; pointer-events:none; }
 .toast.show { transform:translateY(0); opacity:1; }
 .toast.ok { background:var(--green); }
@@ -219,7 +211,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <label>Contraseña</label>
       <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn-primary" id="btnLogin" onclick="doLogin()">Entrar →</button>
+    <button class="btn-auth" id="btnLogin" onclick="doLogin()">Entrar →</button>
     <p style="text-align:center;margin-top:1.25rem;font-size:0.78rem;color:var(--ink-muted)">¿Problemas para entrar? Contacta a tu asesor.</p>
   </div>
 </div>
@@ -248,25 +240,52 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <div class="user-email" id="userEmail">correo</div>
       </div>
     </div>
-    <div>
-      <div class="sidebar-section-title">Menú</div>
-      <nav style="display:flex;flex-direction:column;gap:0.2rem">
-        <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</button>
-        <button class="nav-item" onclick="showPage('pl',this)"><span class="nav-icon">📋</span>Estado de Resultados</button>
-        <button class="nav-item" onclick="showPage('historial',this)"><span class="nav-icon">🧾</span>Historial</button>
-        <button class="nav-item" onclick="showPage('importar',this)"><span class="nav-icon">📥</span>Importar Excel</button>
-        <button class="nav-item" onclick="showPage('insights',this)"><span class="nav-icon">✨</span>Insights IA</button>
-        <button class="nav-item" onclick="showPage('forecast',this)"><span class="nav-icon">🔮</span>Forecast</button>
-        <button class="nav-item" onclick="showPage('reporte',this)"><span class="nav-icon">📄</span>Reporte PDF</button>
+    <div style="flex:1;overflow-y:auto;padding-top:0.25rem">
+      <div class="sidebar-section-title" style="margin-top:0.75rem">Principal</div>
+      <nav style="display:flex;flex-direction:column;gap:1px;margin-bottom:0.25rem">
+        <button class="nav-item active" onclick="showPage('dashboard',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="7" width="4" height="6" rx="1" fill="currentColor" opacity="0.7"/><rect x="6" y="4" width="4" height="9" rx="1" fill="currentColor"/><rect x="11" y="1" width="2" height="12" rx="1" fill="currentColor" opacity="0.5"/></svg></span>
+          Dashboard
+        </button>
+        <button class="nav-item" onclick="showPage('pl',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="1.5" rx="0.75" fill="currentColor"/><rect x="2" y="5.5" width="7" height="1.5" rx="0.75" fill="currentColor" opacity="0.6"/><rect x="2" y="9" width="9" height="1.5" rx="0.75" fill="currentColor" opacity="0.8"/></svg></span>
+          Estado de Resultados
+        </button>
+        <button class="nav-item" onclick="showPage('historial',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7 4.5V7L8.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          Historial
+        </button>
+        <button class="nav-item" onclick="showPage('importar',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v7M4.5 6.5L7 9l2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 10.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          Importar Excel
+        </button>
       </nav>
-    </div>
-    <div>
-      <div class="sidebar-section-title">Mis Negocios</div>
+
+      <div class="sidebar-section-title">Análisis</div>
+      <nav style="display:flex;flex-direction:column;gap:1px;margin-bottom:0.25rem">
+        <button class="nav-item" onclick="showPage('insights',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" fill="currentColor"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          Insights
+        </button>
+        <button class="nav-item" onclick="showPage('forecast',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 10.5L5 6.5L8 8.5L12.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Forecast
+        </button>
+        <button class="nav-item" onclick="showPage('reporte',this)">
+          <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2.5" y="1.5" width="9" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 5h4M5 7.5h4M5 10h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
+          Reporte PDF
+        </button>
+      </nav>
+
+      <div class="sidebar-section-title">Negocios</div>
       <div id="bizList"></div>
       <button class="btn-new-biz" onclick="openBizModal()">+ Nuevo negocio</button>
     </div>
     <div class="sidebar-footer">
-      <button class="btn-logout" onclick="doLogout()">↩ Cerrar sesión</button>
+      <button class="btn-logout" onclick="doLogout()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="opacity:0.5"><path d="M5 2.5H3C2.4 2.5 2 3 2 3.5v6c0 .6.4 1 1 1h2M9 4.5l2 2-2 2M5.5 6.5h5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cerrar sesión
+      </button>
     </div>
   </aside>
 
@@ -285,33 +304,41 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         </div>
       </div>
       <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Ingresos</div><div class="kpi-icon" style="background:var(--green-bg)">💰</div></div><div class="kpi-value text-green" id="kpiIng">$0</div><div class="kpi-sub" id="kpiIngSub">período</div></div>
-        <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Gastos</div><div class="kpi-icon" style="background:var(--red-bg)">📤</div></div><div class="kpi-value text-red" id="kpiGas">$0</div><div class="kpi-sub">período</div></div>
-        <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Utilidad</div><div class="kpi-icon" style="background:var(--gold-bg)">📈</div></div><div class="kpi-value" id="kpiUtil">$0</div><div class="kpi-sub" id="kpiMargen">Margen: 0%</div></div>
-        <div class="kpi-card"><div class="kpi-top"><div class="kpi-label">Movimientos</div><div class="kpi-icon" style="background:var(--blue-bg)">🧾</div></div><div class="kpi-value" id="kpiMov">0</div><div class="kpi-sub" id="kpiMovSub">registrados</div></div>
+        <div class="kpi-card">
+          <div class="kpi-top"><div class="kpi-label">Ingresos</div></div>
+          <div class="kpi-value text-green" id="kpiIng">$0</div>
+          <div class="kpi-sub" id="kpiIngSub">período</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><div class="kpi-label">Gastos</div></div>
+          <div class="kpi-value text-red" id="kpiGas">$0</div>
+          <div class="kpi-sub">período</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><div class="kpi-label">Utilidad Bruta</div></div>
+          <div class="kpi-value" id="kpiUtil">$0</div>
+          <div class="kpi-sub" id="kpiMargen">Margen: 0%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><div class="kpi-label">Movimientos</div></div>
+          <div class="kpi-value" id="kpiMov">0</div>
+          <div class="kpi-sub" id="kpiMovSub">registrados</div>
+        </div>
       </div>
       <div class="charts-row">
-        <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub">Por mes</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
-        <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
+        <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub">Últimos 6 meses</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+        <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución del período</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
       </div>
       <div class="bottom-row">
-        <div class="add-tx-card">
-          <div class="card-title" style="margin-bottom:0.9rem">➕ Registrar movimiento</div>
-          <div class="tx-type-toggle">
-            <button class="tx-type-btn ingreso active" id="btnIngreso" onclick="setTxType('ingreso')">💰 Ingreso</button>
-            <button class="tx-type-btn gasto" id="btnGasto" onclick="setTxType('gasto')">📤 Gasto</button>
-          </div>
-          <div class="form-group"><label>Concepto</label><input type="text" id="txConcepto" placeholder="Ej: Venta del día, Renta..."></div>
-          <div class="form-row">
-            <div class="form-group"><label>Monto ($)</label><input type="number" id="txMonto" placeholder="0.00" min="0" step="0.01"></div>
-            <div class="form-group"><label>Categoría</label><select id="txCategoria"><option value="ventas">Ventas</option><option value="servicios">Servicios</option><option value="otro">Otro ingreso</option></select></div>
-          </div>
-          <div class="form-group"><label>Fecha</label><input type="date" id="txFecha"></div>
-          <button class="btn-submit" id="btnAddTx" onclick="addTransaction()">Guardar movimiento</button>
-        </div>
+        <div class="add-tx-card"></div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:0.3rem">Movimientos recientes</div>
-          <div class="card-sub" id="recentCount" style="margin-bottom:0.9rem">0 registros</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+            <div>
+              <div class="card-title">Movimientos recientes</div>
+              <div class="card-sub" id="recentCount">0 registros</div>
+            </div>
+            <button onclick="openTxModal()" style="padding:0.45rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer">+ Registrar</button>
+          </div>
           <div class="tx-list" id="recentList"><div class="empty"><div class="empty-icon">📝</div><h4>Sin movimientos</h4><p>Registra tu primer ingreso o gasto</p></div></div>
         </div>
       </div>
@@ -328,10 +355,45 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     <div class="page" id="page-historial">
       <div class="topbar">
         <div><div class="page-title">Historial completo</div><div class="page-subtitle" id="histSub">Todos los movimientos</div></div>
-        <select id="histFilter" onchange="renderHistorial()" style="padding:0.4rem 0.75rem;border:1px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;background:var(--surface)">
-          <option value="todos">Todos</option><option value="ingreso">Solo ingresos</option><option value="gasto">Solo gastos</option>
-        </select>
       </div>
+
+      <!-- Filtros -->
+      <div class="card" style="margin-bottom:1.25rem;padding:1rem 1.4rem">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-muted)">Tipo</label>
+            <select id="histFilter" onchange="renderHistorial()" style="padding:0.35rem 0.7rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;background:var(--surface);color:var(--ink);outline:none">
+              <option value="todos">Todos</option>
+              <option value="ingreso">Ingresos</option>
+              <option value="gasto">Gastos</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-muted)">Mes</label>
+            <select id="histMesFilter" onchange="renderHistorial()" style="padding:0.35rem 0.7rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;background:var(--surface);color:var(--ink);outline:none">
+              <option value="">Todos los meses</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-muted)">Día</label>
+            <input type="date" id="histDiaFilter" onchange="renderHistorial()" style="padding:0.35rem 0.7rem;border:1.5px solid var(--border);border-radius:7px;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;background:var(--surface);color:var(--ink);outline:none">
+          </div>
+          <button onclick="clearHistFilters()" style="padding:0.35rem 0.8rem;border:1.5px solid var(--border);border-radius:7px;background:none;font-family:'Instrument Sans',sans-serif;font-size:0.78rem;color:var(--ink-muted);cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--ink-muted)'" onmouseout="this.style.borderColor='var(--border)'">Limpiar filtros</button>
+        </div>
+      </div>
+
+      <!-- Importaciones -->
+      <div class="card" style="margin-bottom:1.25rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+          <div>
+            <div class="card-title">📥 Historial de importaciones</div>
+            <div class="card-sub">Archivos Excel subidos — puedes borrar todos los registros de una importación</div>
+          </div>
+        </div>
+        <div id="importsList"><div style="color:var(--ink-muted);font-size:0.83rem">Cargando...</div></div>
+      </div>
+
+      <!-- Transacciones -->
       <div class="card"><div class="tx-list" style="max-height:none" id="histList"></div></div>
     </div>
 
@@ -543,19 +605,19 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     <div class="page" id="page-reporte">
       <div class="topbar">
         <div>
-          <div class="page-title">📄 Reporte PDF</div>
-          <div class="page-subtitle">Genera un reporte profesional para contadores, socios o bancos</div>
+          <div class="page-title">📄 Reporte Ejecutivo PDF</div>
+          <div class="page-subtitle">Reporte profesional con análisis narrativo para contadores, socios o bancos</div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:380px 1fr;gap:1.25rem;align-items:flex-start">
+      <div style="display:grid;grid-template-columns:400px 1fr;gap:1.25rem;align-items:flex-start">
 
         <!-- Config panel -->
         <div class="card">
           <div class="card-title" style="margin-bottom:1.25rem">⚙️ Configurar reporte</div>
 
           <div class="form-group">
-            <label>📅 Período del reporte</label>
+            <label>📅 Período</label>
             <select id="rptPeriodo" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
               <option value="mensual">Mensual</option>
               <option value="trimestral">Trimestral</option>
@@ -564,20 +626,20 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
             </select>
           </div>
 
-          <div class="form-group" id="rptMesGroup">
-            <label>🗓️ Mes</label>
-            <select id="rptMes" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
-              <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
-              <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
-              <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
-              <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>📅 Año</label>
-            <select id="rptAnio" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
-            </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="form-group" id="rptMesGroup">
+              <label>🗓️ Mes</label>
+              <select id="rptMes" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()">
+                <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+                <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+                <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+                <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>📅 Año</label>
+              <select id="rptAnio" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none" onchange="updateRptPreview()"></select>
+            </div>
           </div>
 
           <div class="form-group">
@@ -586,19 +648,36 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
           </div>
 
           <div class="form-group">
-            <label>📝 Nota adicional (opcional)</label>
-            <textarea id="rptNota" rows="2" placeholder="Comentario para el destinatario..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;resize:none;outline:none"></textarea>
+            <label>👤 Nombre del dueño / responsable</label>
+            <input type="text" id="rptDueno" placeholder="Ej: María García López" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;outline:none">
           </div>
 
-          <div style="margin-bottom:1rem">
-            <label style="font-size:0.78rem;font-weight:600;display:block;margin-bottom:0.6rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.06em">Secciones a incluir</label>
-            <div style="display:flex;flex-direction:column;gap:0.4rem">
-              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_resumen" checked> Resumen ejecutivo (KPIs)</label>
-              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_pl" checked> Estado de resultados</label>
-              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_cats" checked> Análisis por categoría</label>
-              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_mensual" checked> Comparativo mensual</label>
-              <label style="display:flex;align-items:center;gap:0.6rem;font-size:0.83rem;cursor:pointer"><input type="checkbox" id="sec_forecast" checked> Forecast (próximos 3 meses)</label>
+          <div class="form-group">
+            <label>🖼️ Logo del negocio</label>
+            <div id="logoDropZone" onclick="document.getElementById('logoInput').click()" style="border:2px dashed var(--border);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2)">
+              <div id="logoPreviewWrap" style="display:none;margin-bottom:0.5rem">
+                <img id="logoPreview" style="max-height:60px;max-width:160px;object-fit:contain;border-radius:4px">
+              </div>
+              <div id="logoPlaceholder" style="font-size:0.82rem;color:var(--ink-muted)">📁 Haz clic para subir tu logo (PNG, JPG)</div>
+              <input type="file" id="logoInput" accept="image/png,image/jpeg,image/jpg,image/svg+xml" style="display:none" onchange="handleLogoUpload(this)">
             </div>
+            <div id="logoName" style="font-size:0.75rem;color:var(--green);margin-top:0.3rem;display:none"></div>
+          </div>
+
+          <div class="form-group">
+            <label>✍️ Firma del dueño (imagen opcional)</label>
+            <div id="firmaDropZone" onclick="document.getElementById('firmaInput').click()" style="border:2px dashed var(--border);border-radius:8px;padding:0.85rem;text-align:center;cursor:pointer;background:var(--surface2)">
+              <div id="firmaPreviewWrap" style="display:none;margin-bottom:0.4rem">
+                <img id="firmaPreview" style="max-height:50px;max-width:140px;object-fit:contain">
+              </div>
+              <div id="firmaPlaceholder" style="font-size:0.82rem;color:var(--ink-muted)">📁 Sube imagen de tu firma (opcional)</div>
+              <input type="file" id="firmaInput" accept="image/png,image/jpeg,image/jpg" style="display:none" onchange="handleFirmaUpload(this)">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>📝 Nota adicional (opcional)</label>
+            <textarea id="rptNota" rows="2" placeholder="Comentario o contexto adicional para el destinatario..." style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;resize:none;outline:none"></textarea>
           </div>
 
           <button onclick="generarPDF()" class="btn-submit" id="btnPDF" style="margin-top:0">
@@ -609,13 +688,41 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <!-- Preview panel -->
         <div class="card">
           <div class="card-title" style="margin-bottom:0.5rem">👁️ Vista previa del reporte</div>
-          <div class="card-sub" style="margin-bottom:1.25rem">Resumen de lo que incluirá el PDF</div>
+          <div class="card-sub" style="margin-bottom:1.25rem">Así se verá el análisis narrativo en el PDF</div>
           <div id="rptPreview"></div>
         </div>
 
       </div>
     </div>
   </main>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openTxModal()" title="Registrar movimiento">+</button>
+
+<!-- Transaction Modal -->
+<div class="modal-overlay" id="txModal">
+  <div class="modal tx-modal">
+    <h3>Registrar movimiento</h3>
+    <div class="tx-type-toggle" style="margin-bottom:1rem">
+      <button class="tx-type-btn ingreso active" id="btnIngreso" onclick="setTxType('ingreso')">↑ Ingreso</button>
+      <button class="tx-type-btn gasto" id="btnGasto" onclick="setTxType('gasto')">↓ Gasto</button>
+    </div>
+    <div class="form-group"><label>Concepto</label><input type="text" id="txConcepto" placeholder="Ej: Venta del día, Renta..."></div>
+    <div class="form-row">
+      <div class="form-group"><label>Monto ($)</label><input type="number" id="txMonto" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group"><label>Categoría</label>
+        <select id="txCategoria" style="width:100%;padding:0.7rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--surface);outline:none">
+          <option value="ventas">Ventas</option><option value="servicios">Servicios</option><option value="mercancia">Mercancía</option><option value="renta">Renta</option><option value="nomina">Nómina</option><option value="marketing">Marketing</option><option value="servicios_pub">Servicios públicos</option><option value="transporte">Transporte</option><option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Fecha</label><input type="date" id="txFecha"></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeTxModal()">Cancelar</button>
+      <button class="btn-full" id="btnAddTx" onclick="addTransaction()">Guardar movimiento</button>
+    </div>
+  </div>
 </div>
 
 <!-- New Biz Modal -->
@@ -716,6 +823,15 @@ async function loadBusinesses() {
   renderBizList(); renderDashboard();
 }
 
+function openTxModal() {
+  document.getElementById('txModal').classList.add('show');
+  document.getElementById('txConcepto').focus();
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('txFecha').value = today;
+}
+function closeTxModal() { document.getElementById('txModal').classList.remove('show'); }
+
 function openBizModal() { document.getElementById('bizModal').classList.add('show'); document.getElementById('bizName').focus(); }
 function closeBizModal() { document.getElementById('bizModal').classList.remove('show'); }
 
@@ -734,13 +850,12 @@ async function createBiz() {
 async function selectBiz(id) { S.activeBizId = id; await loadTransactions(); renderBizList(); renderDashboard(); }
 
 function renderBizList() {
-  const COLORS = ['#2d6a4f','#e76f51','#264653','#e9c46a','#457b9d'];
-  document.getElementById('bizList').innerHTML = S.businesses.map((b,i) => {
-    const color = COLORS[i%COLORS.length];
-    return `<div class="biz-item ${b.id===S.activeBizId?'active':''}" onclick="selectBiz('${b.id}')">
-      <div class="biz-avatar" style="background:${color}22;color:${color}">${b.name[0].toUpperCase()}</div>
-      <span>${b.name}</span></div>`;
-  }).join('') || '<p style="font-size:0.75rem;color:rgba(255,255,255,0.25);padding:0.4rem 0.75rem">Sin negocios aún</p>';
+  document.getElementById('bizList').innerHTML = S.businesses.map(b => {
+    return `<button class="nav-biz-item${b.id===S.activeBizId?' active':''}" onclick="selectBiz('${b.id}')">
+      <div class="nav-biz-dot"></div>
+      <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</span>
+    </button>`;
+  }).join('') || '<p style="font-size:0.75rem;color:rgba(255,255,255,0.2);padding:0.4rem 0.75rem">Sin negocios</p>';
 }
 
 // Transactions
@@ -777,6 +892,7 @@ async function addTransaction() {
   S.transactions.unshift(data);
   document.getElementById('txConcepto').value='';
   document.getElementById('txMonto').value='';
+  closeTxModal();
   renderDashboard();
   showToast(`✅ ${txType==='ingreso'?'Ingreso':'Gasto'} guardado`, 'ok');
 }
@@ -866,10 +982,37 @@ function renderPL(filterYM=null) {
 }
 
 function renderHistorial() {
-  const filter=document.getElementById('histFilter')?.value||'todos';
-  let all=[...S.transactions]; if(filter!=='todos')all=all.filter(t=>t.tipo===filter);
-  document.getElementById('histSub').textContent=`${all.length} movimientos`;
-  document.getElementById('histList').innerHTML=all.length?all.map(t=>`<div class="tx-item"><div class="tx-dot" style="background:${t.tipo==='ingreso'?'var(--green)':'var(--red)'}"></div><div class="tx-info"><div class="tx-concepto">${t.concepto}</div><div class="tx-meta">${fmtDate(t.fecha)} · ${CAT_LABELS[t.categoria]||t.categoria||t.tipo}</div></div><div class="tx-amount ${t.tipo}">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</div><button class="tx-del" onclick="deleteTransaction('${t.id}')">✕</button></div>`).join(''):`<div class="empty"><div class="empty-icon">🧾</div><h4>Sin historial</h4><p>Tus movimientos aparecerán aquí</p></div>`;
+  const filter = document.getElementById('histFilter')?.value || 'todos';
+  const mesFilter = document.getElementById('histMesFilter')?.value || '';
+  const diaFilter = document.getElementById('histDiaFilter')?.value || '';
+
+  let all = [...S.transactions];
+  if (filter !== 'todos') all = all.filter(t => t.tipo === filter);
+  if (mesFilter) all = all.filter(t => t.fecha.startsWith(mesFilter));
+  if (diaFilter) all = all.filter(t => t.fecha === diaFilter);
+
+  document.getElementById('histSub').textContent = `${all.length} movimientos${mesFilter||diaFilter ? ' (filtrado)' : ''}`;
+  document.getElementById('histList').innerHTML = all.length
+    ? all.map(t => `<div class="tx-item"><div class="tx-dot" style="background:${t.tipo==='ingreso'?'var(--green)':'var(--red)'}"></div><div class="tx-info"><div class="tx-concepto">${t.concepto}</div><div class="tx-meta">${fmtDate(t.fecha)} · ${CAT_LABELS[t.categoria]||t.categoria||t.tipo}</div></div><div class="tx-amount ${t.tipo}">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</div><button class="tx-del" onclick="deleteTransaction('${t.id}')">✕</button></div>`).join('')
+    : `<div class="empty"><div class="empty-icon">🧾</div><h4>Sin resultados</h4><p>No hay movimientos con los filtros seleccionados</p></div>`;
+}
+
+function populateHistMeses() {
+  const sel = document.getElementById('histMesFilter');
+  if (!sel) return;
+  const meses = [...new Set(S.transactions.map(t => t.fecha.substring(0,7)))].sort().reverse();
+  const MNAMES = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos los meses</option>' +
+    meses.map(m => { const [y,mo] = m.split('-'); return `<option value="${m}">${MNAMES[mo]||mo} ${y}</option>`; }).join('');
+  if (current) sel.value = current;
+}
+
+function clearHistFilters() {
+  document.getElementById('histFilter').value = 'todos';
+  document.getElementById('histMesFilter').value = '';
+  document.getElementById('histDiaFilter').value = '';
+  renderHistorial();
 }
 
 function showPage(page,btn) {
@@ -877,7 +1020,7 @@ function showPage(page,btn) {
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active'); btn.classList.add('active');
   if(page==='pl')renderPL(S.plMonth);
-  if(page==='historial')renderHistorial();
+  if(page==='historial'){populateHistMeses();renderHistorial();loadImports();}
   if(page==='reporte')initReportePage();
 
 }
@@ -1065,24 +1208,31 @@ async function runImport() {
     const fecha = parseDate(row[fechaIdx]);
     const concepto = String(row[conceptoIdx] || '').trim();
     const monto = parseFloat(String(row[montoIdx]).replace(/[,$]/g,''));
-
     if (!fecha || !concepto || isNaN(monto) || monto <= 0) { skip++; continue; }
-
     let tipo = tipoDefault;
     if (tipoIdx >= 0 && row[tipoIdx]) {
       const t = String(row[tipoIdx]).toLowerCase();
       if (t.includes('gasto') || t.includes('egreso') || t.includes('expense')) tipo = 'gasto';
       else if (t.includes('ingreso') || t.includes('venta') || t.includes('income')) tipo = 'ingreso';
     }
-
     const categoria = catIdx >= 0 ? String(row[catIdx]||'').toLowerCase().trim() : (tipo === 'ingreso' ? 'ventas' : 'otro');
-
     batch.push({ business_id: S.activeBizId, user_id: S.user.id, tipo, concepto, monto, categoria: categoria||'otro', fecha });
     ok++;
   }
 
   if (batch.length > 0) {
-    // Insert in chunks of 100
+    // 1. Create import record first
+    const filename = document.getElementById('fileInput')?.files?.[0]?.name || 'archivo.xlsx';
+    const { data: importRecord, error: impErr } = await sb.from('imports')
+      .insert({ user_id: S.user.id, business_id: S.activeBizId, filename, record_count: ok })
+      .select().single();
+
+    if (!impErr && importRecord) {
+      // 2. Tag all transactions with import_id
+      batch.forEach(t => t.import_id = importRecord.id);
+    }
+
+    // 3. Insert in chunks of 100
     for (let i = 0; i < batch.length; i += 100) {
       await sb.from('transactions').insert(batch.slice(i, i+100));
     }
@@ -1463,45 +1613,136 @@ function generarForecast() {
   }, 600);
 }
 
+// ── IMPORTS HISTORY ──────────────────────────────────────────
+async function loadImports() {
+  const el = document.getElementById('importsList');
+  if (!el) return;
+  const { data, error } = await sb.from('imports')
+    .select('*')
+    .eq('business_id', S.activeBizId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    el.innerHTML = '<div style="color:var(--ink-muted);font-size:0.83rem;padding:0.5rem 0">No hay importaciones registradas para este negocio.</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--ink-muted);font-weight:600">Archivo</th>
+          <th style="text-align:center;padding:0.5rem 0.75rem;color:var(--ink-muted);font-weight:600">Registros</th>
+          <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--ink-muted);font-weight:600">Fecha</th>
+          <th style="text-align:center;padding:0.5rem 0.75rem;color:var(--ink-muted);font-weight:600">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(imp => `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:0.6rem 0.75rem">
+              <div style="font-weight:500">📊 ${imp.filename||'archivo.xlsx'}</div>
+            </td>
+            <td style="padding:0.6rem 0.75rem;text-align:center">
+              <span style="background:var(--blue-bg);color:var(--blue);padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600">${imp.record_count} registros</span>
+            </td>
+            <td style="padding:0.6rem 0.75rem;color:var(--ink-muted);font-size:0.8rem">
+              ${new Date(imp.created_at).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+            </td>
+            <td style="padding:0.6rem 0.75rem;text-align:center">
+              <button onclick="deleteImport('${imp.id}', '${(imp.filename||'archivo').replace(/'/g,'')}', ${imp.record_count})"
+                style="padding:0.3rem 0.75rem;border:1.5px solid var(--red);border-radius:7px;background:transparent;color:var(--red);font-family:'Instrument Sans',sans-serif;font-size:0.75rem;cursor:pointer;transition:all 0.15s"
+                onmouseover="this.style.background='var(--red-bg)'" onmouseout="this.style.background='transparent'">
+                🗑️ Borrar importación
+              </button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function deleteImport(importId, filename, count) {
+  if (!confirm(`¿Borrar la importación "${filename}" y sus ${count} registros?\n\nEsta acción no se puede deshacer.`)) return;
+
+  // Delete all transactions linked to this import
+  const { error: txErr } = await sb.from('transactions')
+    .delete()
+    .eq('import_id', importId)
+    .eq('user_id', S.user.id);
+
+  if (txErr) return showToast('Error al borrar los registros', 'err');
+
+  // Delete import record
+  await sb.from('imports').delete().eq('id', importId);
+
+  showToast(`✅ Importación "${filename}" borrada`, 'ok');
+  await loadTransactions();
+  renderHistorial();
+  renderDashboard();
+  loadImports();
+}
+
 // ── REPORTE PDF ──────────────────────────────────────────
+let logoDataUrl = null;
+let firmaDataUrl = null;
+
+function handleLogoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    logoDataUrl = e.target.result;
+    document.getElementById('logoPreview').src = logoDataUrl;
+    document.getElementById('logoPreviewWrap').style.display = 'block';
+    document.getElementById('logoPlaceholder').style.display = 'none';
+    document.getElementById('logoName').style.display = 'block';
+    document.getElementById('logoName').textContent = '✅ ' + file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleFirmaUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    firmaDataUrl = e.target.result;
+    document.getElementById('firmaPreview').src = firmaDataUrl;
+    document.getElementById('firmaPreviewWrap').style.display = 'block';
+    document.getElementById('firmaPlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
 function initReportePage() {
-  // Populate year selector
   const txs = S.transactions;
   const years = [...new Set(txs.map(t => t.fecha.substring(0,4)))].sort().reverse();
   const currentYear = new Date().getFullYear().toString();
   if (!years.includes(currentYear)) years.unshift(currentYear);
   const sel = document.getElementById('rptAnio');
   sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-
-  // Set current month
   const now = new Date();
   document.getElementById('rptMes').value = String(now.getMonth()+1).padStart(2,'0');
-  document.getElementById('rptPeriodo').addEventListener('change', updateRptPreview);
   updateRptPreview();
 }
 
 function getRptRange() {
   const periodo = document.getElementById('rptPeriodo').value;
-  const anio = document.getElementById('rptAnio').value;
-  const mes = document.getElementById('rptMes').value;
+  const anio = document.getElementById('rptAnio')?.value || new Date().getFullYear().toString();
+  const mes = document.getElementById('rptMes')?.value || '01';
   const mesGroup = document.getElementById('rptMesGroup');
-
-  let start, end, label;
+  const MNAMES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const m = parseInt(mes), y = parseInt(anio);
-
+  let start, end, label;
   if (periodo === 'mensual') {
     mesGroup.style.display = 'block';
-    start = `${anio}-${mes}`;
-    end = start;
-    const mNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    label = `${mNames[m]} ${anio}`;
+    start = end = `${anio}-${mes}`;
+    label = `${MNAMES[m]} ${anio}`;
   } else if (periodo === 'trimestral') {
     mesGroup.style.display = 'block';
     const q = Math.ceil(m/3);
-    const qStart = (q-1)*3+1;
-    const qEnd = q*3;
-    start = `${anio}-${String(qStart).padStart(2,'0')}`;
-    end = `${anio}-${String(qEnd).padStart(2,'0')}`;
+    start = `${anio}-${String((q-1)*3+1).padStart(2,'0')}`;
+    end = `${anio}-${String(q*3).padStart(2,'0')}`;
     label = `Q${q} ${anio}`;
   } else if (periodo === 'semestral') {
     mesGroup.style.display = 'block';
@@ -1511,404 +1752,408 @@ function getRptRange() {
     label = `${half===1?'Primer':'Segundo'} semestre ${anio}`;
   } else {
     mesGroup.style.display = 'none';
-    start = `${anio}-01`;
-    end = `${anio}-12`;
+    start = `${anio}-01`; end = `${anio}-12`;
     label = `Año ${anio}`;
   }
   return { start, end, label, periodo };
 }
 
 function filterTxsByRange(start, end) {
-  return S.transactions.filter(t => {
-    const ym = t.fecha.substring(0,7);
-    return ym >= start && ym <= end;
-  });
+  return S.transactions.filter(t => { const ym = t.fecha.substring(0,7); return ym >= start && ym <= end; });
 }
 
-function updateRptPreview() {
-  const { start, end, label } = getRptRange();
-  const txs = filterTxsByRange(start, end);
+function getPrevRange(start, end, periodo) {
+  const [sy, sm] = start.split('-').map(Number);
+  const mCount = {'mensual':1,'trimestral':3,'semestral':6,'anual':12}[periodo]||1;
+  let pm = sm - mCount, py = sy;
+  if (pm <= 0) { pm += 12; py--; }
+  const pStart = `${py}-${String(pm).padStart(2,'0')}`;
+  const [ey, em] = end.split('-').map(Number);
+  let pem = em - mCount, pey = ey;
+  if (pem <= 0) { pem += 12; pey--; }
+  const pEnd = `${pey}-${String(pem).padStart(2,'0')}`;
+  return { start: pStart, end: pEnd };
+}
+
+function buildNarrative(txs, prevTxs, label, periodo, bizName) {
   const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
   const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
   const util = ing - gas;
   const margen = ing > 0 ? (util/ing*100) : 0;
-  const biz = S.businesses.find(b=>b.id===S.activeBizId);
+  const pIng = prevTxs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const pGas = prevTxs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+  const pUtil = pIng - pGas;
 
-  // Monthly breakdown for period
+  const ingVar = pIng > 0 ? ((ing-pIng)/pIng*100) : null;
+  const gasVar = pGas > 0 ? ((gas-pGas)/pGas*100) : null;
+  const utilVar = pUtil !== 0 ? ((util-pUtil)/Math.abs(pUtil)*100) : null;
+
+  const cats = {};
+  txs.filter(t=>t.tipo==='gasto').forEach(t => { const k=t.categoria||'otro'; cats[k]=(cats[k]||0)+t.monto; });
+  const topGastos = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
   const monthly = {};
-  txs.forEach(t => {
-    const ym = t.fecha.substring(0,7);
-    if (!monthly[ym]) monthly[ym] = {ing:0,gas:0};
-    monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
-  });
+  txs.forEach(t => { const ym=t.fecha.substring(0,7); if(!monthly[ym])monthly[ym]={ing:0,gas:0}; monthly[ym][t.tipo==='ingreso'?'ing':'gas']+=t.monto; });
   const months = Object.entries(monthly).sort();
+  const bestMonth = months.reduce((b,m) => m[1].ing>(b?.[1]?.ing||0)?m:b, null);
+
+  // YTD
+  const anio = label.match(/\d{4}/)?.[0];
+  const ytdTxs = anio ? S.transactions.filter(t=>t.fecha.startsWith(anio)) : txs;
+  const ytdIng = ytdTxs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
+  const ytdGas = ytdTxs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+
+  const lines = [];
+  const pLabel = {'mensual':'mes anterior','trimestral':'trimestre anterior','semestral':'semestre anterior','anual':'año anterior'}[periodo]||'período anterior';
+
+  // Opening
+  lines.push(`Durante el período correspondiente a ${label}, ${bizName} registró ingresos brutos por ${fmt(ing)} y gastos operativos por ${fmt(gas)}, resultando en una utilidad bruta de ${fmt(util)}, equivalente a un margen del ${margen.toFixed(1)}%.`);
+
+  // Ingresos vs prev
+  if (ingVar !== null) {
+    if (ingVar > 0) lines.push(`Los ingresos presentaron un incremento del ${ingVar.toFixed(1)}% respecto al ${pLabel} (${fmt(pIng)}), lo que refleja un desempeño positivo en la generación de ventas y servicios.`);
+    else if (ingVar < -5) lines.push(`Los ingresos registraron una disminución del ${Math.abs(ingVar).toFixed(1)}% en comparación con el ${pLabel} (${fmt(pIng)}). Se recomienda analizar las causas de esta variación.`);
+    else lines.push(`Los ingresos se mantuvieron estables respecto al ${pLabel} (${fmt(pIng)}), con una variación de ${ingVar.toFixed(1)}%.`);
+  }
+
+  // Gastos vs prev
+  if (gasVar !== null) {
+    if (gasVar > 10) lines.push(`Los gastos operativos aumentaron un ${gasVar.toFixed(1)}% frente al ${pLabel} (${fmt(pGas)}). Este incremento merece atención para evitar una contracción del margen.`);
+    else if (gasVar < -5) lines.push(`Los gastos operativos se redujeron un ${Math.abs(gasVar).toFixed(1)}% respecto al ${pLabel} (${fmt(pGas)}), contribuyendo positivamente a la utilidad del período.`);
+    else lines.push(`Los gastos operativos se mantuvieron en niveles similares al ${pLabel} (${fmt(pGas)}), con una variación de ${gasVar.toFixed(1)}%.`);
+  }
+
+  // Top gastos
+  if (topGastos.length > 0) {
+    const topStr = topGastos.map(([k,v]) => `${CAT_LABELS[k]||k} (${fmt(v)}, ${gas>0?(v/gas*100).toFixed(0):'0'}% del total)`).join(', ');
+    lines.push(`Las categorías de gasto más significativas durante el período fueron: ${topStr}.`);
+  }
+
+  // Mejor mes
+  if (bestMonth && months.length > 1) {
+    const MMAP = {'01':'enero','02':'febrero','03':'marzo','04':'abril','05':'mayo','06':'junio','07':'julio','08':'agosto','09':'septiembre','10':'octubre','11':'noviembre','12':'diciembre'};
+    const [bYear, bMon] = bestMonth[0].split('-');
+    lines.push(`El mejor mes en términos de ingresos fue ${MMAP[bMon]||bMon} de ${bYear}, con ${fmt(bestMonth[1].ing)} en ingresos y una utilidad de ${fmt(bestMonth[1].ing-bestMonth[1].gas)}.`);
+  }
+
+  // YTD (only if not annual)
+  if (periodo !== 'anual' && anio) {
+    lines.push(`En términos acumulados al cierre del período (YTD ${anio}), el negocio ha generado ingresos totales de ${fmt(ytdIng)} y gastos de ${fmt(ytdGas)}, con una utilidad bruta acumulada de ${fmt(ytdIng-ytdGas)}.`);
+  }
+
+  // Utilidad conclusion
+  if (margen >= 40) lines.push(`El margen bruto del ${margen.toFixed(1)}% se considera sólido para la operación del negocio, indicando una buena capacidad de generación de utilidades antes de deducciones fiscales y financieras.`);
+  else if (margen >= 20) lines.push(`El margen bruto del ${margen.toFixed(1)}% es moderado. Se recomienda revisar las principales partidas de gasto para identificar oportunidades de mejora en la rentabilidad.`);
+  else if (margen > 0) lines.push(`El margen bruto del ${margen.toFixed(1)}% es bajo. Es prioritario revisar la estructura de costos y explorar alternativas para incrementar los ingresos o reducir gastos.`);
+  else lines.push(`El negocio registró pérdida bruta en el período. Se requiere atención urgente en la gestión de gastos y estrategias de incremento de ingresos.`);
+
+  lines.push(`Nota: La utilidad presentada corresponde a utilidad bruta. No incluye intereses, impuestos, depreciaciones ni amortizaciones (EBITDA). Para el cálculo de utilidad neta se requiere información fiscal adicional.`);
+
+  return { lines, ing, gas, util, margen, ingVar, gasVar, topGastos, ytdIng, ytdGas };
+}
+
+function updateRptPreview() {
+  const { start, end, label, periodo } = getRptRange();
+  const txs = filterTxsByRange(start, end);
+  const prev = getPrevRange(start, end, periodo);
+  const prevTxs = filterTxsByRange(prev.start, prev.end);
+  const biz = S.businesses.find(b=>b.id===S.activeBizId);
+  const { lines, ing, gas, util, margen } = buildNarrative(txs, prevTxs, label, periodo, biz?.name||'el negocio');
 
   document.getElementById('rptPreview').innerHTML = `
     <div style="background:var(--surface2);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
-      <div style="font-weight:700;font-size:0.95rem;margin-bottom:0.75rem">📋 ${biz?.name||'Negocio'} — ${label}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:1rem">
-        <div style="background:var(--green-bg);border-radius:8px;padding:0.65rem 0.85rem">
-          <div style="font-size:0.7rem;color:var(--ink-muted)">Ingresos</div>
-          <div style="font-weight:700;color:var(--green)">${fmt(ing)}</div>
-        </div>
-        <div style="background:var(--red-bg);border-radius:8px;padding:0.65rem 0.85rem">
-          <div style="font-size:0.7rem;color:var(--ink-muted)">Gastos</div>
-          <div style="font-weight:700;color:var(--red)">${fmt(gas)}</div>
-        </div>
-        <div style="background:var(--gold-bg);border-radius:8px;padding:0.65rem 0.85rem">
-          <div style="font-size:0.7rem;color:var(--ink-muted)">Utilidad</div>
-          <div style="font-weight:700;color:${util>=0?'var(--green)':'var(--red)'}">${fmt(util)}</div>
-        </div>
-        <div style="background:var(--blue-bg);border-radius:8px;padding:0.65rem 0.85rem">
-          <div style="font-size:0.7rem;color:var(--ink-muted)">Margen</div>
-          <div style="font-weight:700;color:var(--blue)">${margen.toFixed(1)}%</div>
-        </div>
+      <div style="font-weight:700;font-size:0.92rem;margin-bottom:1rem;color:var(--ink)">${biz?.name||'Negocio'} — ${label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem">
+        <div style="background:var(--green-bg);border-radius:7px;padding:0.6rem 0.8rem"><div style="font-size:0.68rem;color:var(--ink-muted)">Ingresos</div><div style="font-weight:700;color:var(--green);font-size:0.9rem">${fmt(ing)}</div></div>
+        <div style="background:var(--red-bg);border-radius:7px;padding:0.6rem 0.8rem"><div style="font-size:0.68rem;color:var(--ink-muted)">Gastos</div><div style="font-weight:700;color:var(--red);font-size:0.9rem">${fmt(gas)}</div></div>
+        <div style="background:var(--gold-bg);border-radius:7px;padding:0.6rem 0.8rem"><div style="font-size:0.68rem;color:var(--ink-muted)">Util. Bruta</div><div style="font-weight:700;color:${util>=0?'var(--green)':'var(--red)'};font-size:0.9rem">${fmt(util)}</div></div>
+        <div style="background:var(--blue-bg);border-radius:7px;padding:0.6rem 0.8rem"><div style="font-size:0.68rem;color:var(--ink-muted)">Margen</div><div style="font-weight:700;color:var(--blue);font-size:0.9rem">${margen.toFixed(1)}%</div></div>
       </div>
-      <div style="font-size:0.78rem;color:var(--ink-muted)">${txs.length} movimientos en el período · ${months.length} meses con actividad</div>
-    </div>
-    <div style="font-size:0.8rem;color:var(--ink-muted);line-height:1.7">
-      ${txs.length === 0 ? '⚠️ No hay movimientos en este período.' : `✅ El PDF incluirá ${txs.length} movimientos del período seleccionado.`}
+      <div style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);margin-bottom:0.6rem">Vista previa del análisis narrativo</div>
+      ${lines.slice(0,3).map(l => `<div style="font-size:0.78rem;color:var(--ink);line-height:1.65;margin-bottom:0.5rem;padding-left:0.75rem;border-left:2px solid var(--border)">${l}</div>`).join('')}
+      ${lines.length > 3 ? `<div style="font-size:0.75rem;color:var(--ink-muted);margin-top:0.5rem">+ ${lines.length-3} párrafos más en el PDF completo</div>` : ''}
     </div>`;
 }
 
 async function generarPDF() {
-  // Wait for jsPDF to load (max 5 seconds)
   let attempts = 0;
-  while (!window.jspdf?.jsPDF && attempts < 20) {
-    await new Promise(r => setTimeout(r, 250));
-    attempts++;
-  }
+  while (!window.jspdf?.jsPDF && attempts < 20) { await new Promise(r => setTimeout(r, 250)); attempts++; }
   const { jsPDF } = window.jspdf || {};
-  if (!jsPDF) return showToast('Error al cargar el generador de PDF. Recarga la página e intenta de nuevo.', 'err');
+  if (!jsPDF) return showToast('Error al cargar el generador de PDF. Recarga la página.', 'err');
 
   const btn = document.getElementById('btnPDF');
   btn.disabled = true; btn.textContent = '⏳ Generando...';
 
   const { start, end, label, periodo } = getRptRange();
   const txs = filterTxsByRange(start, end);
+  const prev = getPrevRange(start, end, periodo);
+  const prevTxs = filterTxsByRange(prev.start, prev.end);
   const biz = S.businesses.find(b=>b.id===S.activeBizId);
   const para = document.getElementById('rptPara').value.trim();
+  const dueno = document.getElementById('rptDueno').value.trim();
   const nota = document.getElementById('rptNota').value.trim();
+  const hoy = new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'});
 
-  const ing = txs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
-  const gas = txs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
-  const util = ing - gas;
-  const margen = ing > 0 ? (util/ing*100) : 0;
+  const { lines, ing, gas, util, margen, ingVar, gasVar, topGastos, ytdIng, ytdGas } = buildNarrative(txs, prevTxs, label, periodo, biz?.name||'el negocio');
 
   const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  const W = 210, margin = 18;
+  const W=210, M=20;
   let y = 0;
 
-  // Colors
   const C = {
-    dark: [28,26,23],
-    green: [30,122,69],
-    red: [192,57,43],
-    gold: [176,125,10],
-    blue: [26,74,138],
-    bg: [248,246,241],
-    border: [226,221,212],
-    muted: [138,130,112],
-    white: [255,255,255],
+    dark:[28,26,23], green:[30,122,69], red:[192,57,43], gold:[176,125,10],
+    blue:[26,74,138], bg:[248,246,241], border:[226,221,212], muted:[138,130,112], white:[255,255,255]
   };
 
-  function setColor(c, fill=false) {
-    if (fill) doc.setFillColor(...c);
-    else doc.setTextColor(...c);
+  function addPage() {
+    doc.addPage(); y = M;
+    doc.setFillColor(...C.bg); doc.rect(0,0,W,10,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    doc.setTextColor(...C.muted);
+    doc.text(biz?.name||'Negocio', M, 7);
+    doc.text(`Reporte ${label}  ·  ContaFácil`, W-M, 7, {align:'right'});
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.3); doc.line(0,10,W,10);
+    y = 20;
   }
 
-  function rect(x,ry,w,h,c) { doc.setFillColor(...c); doc.rect(x,ry,w,h,'F'); }
-  function line(x1,ry,x2) { doc.setDrawColor(...C.border); doc.setLineWidth(0.3); doc.line(x1,ry,x2,ry); }
+  function writeText(text, fontSize, color, opts={}) {
+    doc.setFontSize(fontSize); doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(text, opts.maxWidth || W-M*2);
+    doc.text(lines, opts.x||M, y, opts);
+    y += lines.length * (fontSize * 0.42) + (opts.after||3);
+  }
 
-  // ── COVER PAGE ──
-  rect(0,0,W,297,C.dark);
-  // Accent stripe
-  rect(0,0,6,297,C.green);
+  function hline(color=C.border, width=0.3) {
+    doc.setDrawColor(...color); doc.setLineWidth(width); doc.line(M, y, W-M, y); y += 4;
+  }
+
+  function checkY(needed=20) { if (y + needed > 272) addPage(); }
+
+  // ── PAGE 1: PORTADA ──
+  doc.setFillColor(...C.dark); doc.rect(0,0,W,297,'F');
+  doc.setFillColor(...C.green); doc.rect(0,0,5,297,'F');
+
+  // Logo
+  if (logoDataUrl) {
+    try { doc.addImage(logoDataUrl, 'PNG', M+5, 35, 45, 25, '', 'FAST'); } catch(e) {}
+    y = 68;
+  } else {
+    y = 45;
+  }
 
   // Business name
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(28);
-  setColor(C.white);
-  doc.text(biz?.name || 'Mi Negocio', margin+4, 80);
+  doc.setFont('helvetica','bold'); doc.setFontSize(30);
+  doc.setTextColor(...C.white);
+  doc.text(biz?.name||'Mi Negocio', M+5, y); y += 12;
 
-  // Report title
-  doc.setFontSize(14);
-  doc.setFont('helvetica','normal');
-  setColor([180,220,190]);
-  doc.text('REPORTE FINANCIERO', margin+4, 95);
+  doc.setFont('helvetica','normal'); doc.setFontSize(12);
+  doc.setTextColor(160,210,175);
+  doc.text('REPORTE FINANCIERO EJECUTIVO', M+5, y); y += 8;
 
-  // Period
-  doc.setFontSize(11);
-  setColor(C.muted);
-  doc.text(label, margin+4, 108);
+  doc.setFontSize(10); doc.setTextColor(...C.muted);
+  doc.text(`Período: ${label}`, M+5, y); y += 6;
+  doc.text(`Fecha de emisión: ${hoy}`, M+5, y); y += 20;
 
-  // KPI boxes on cover
+  // KPI boxes
   const kpis = [
-    { label:'Ingresos', val:fmt(ing), color:C.green },
-    { label:'Gastos', val:fmt(gas), color:C.red },
-    { label:'Utilidad', val:fmt(util), color:util>=0?C.green:C.red },
-    { label:'Margen', val:margen.toFixed(1)+'%', color:C.gold },
+    {l:'INGRESOS', v:fmt(ing), c:C.green},
+    {l:'GASTOS', v:fmt(gas), c:C.red},
+    {l:'UTIL. BRUTA', v:fmt(util), c:util>=0?C.green:C.red},
+    {l:'MARGEN', v:margen.toFixed(1)+'%', c:C.gold},
   ];
   kpis.forEach((k,i) => {
-    const kx = margin + 4 + (i%2)*88;
-    const ky = 130 + Math.floor(i/2)*28;
-    rect(kx, ky, 82, 22, [40,38,35]);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-    setColor(C.muted); doc.text(k.label.toUpperCase(), kx+5, ky+8);
+    const kx=M+5+(i%2)*90, ky=y+Math.floor(i/2)*30;
+    doc.setFillColor(40,38,35); doc.rect(kx,ky,84,24,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.setTextColor(...C.muted); doc.text(k.l, kx+5, ky+8);
     doc.setFont('helvetica','bold'); doc.setFontSize(13);
-    doc.setTextColor(...k.color); doc.text(k.val, kx+5, ky+17);
+    doc.setTextColor(...k.c); doc.text(k.v, kx+5, ky+18);
   });
+  y += 70;
 
-  // Prepared for
   if (para) {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
-    setColor(C.muted); doc.text('PREPARADO PARA', margin+4, 198);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.setTextColor(...C.muted); doc.text('PREPARADO PARA', M+5, y); y += 6;
     doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    setColor(C.white); doc.text(para, margin+4, 206);
+    doc.setTextColor(...C.white); doc.text(para, M+5, y); y += 12;
   }
 
-  // Note
   if (nota) {
     doc.setFont('helvetica','italic'); doc.setFontSize(8.5);
-    setColor(C.muted);
-    const lines = doc.splitTextToSize(nota, W - margin*2 - 8);
-    doc.text(lines, margin+4, 225);
+    doc.setTextColor(...C.muted);
+    const notaLines = doc.splitTextToSize(nota, W-M*2-10);
+    doc.text(notaLines, M+5, y); y += notaLines.length * 4 + 6;
   }
 
-  // Footer cover
+  // Footer portada
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-  setColor([80,78,75]);
-  doc.text(`Generado el ${new Date().toLocaleDateString('es-MX', {day:'2-digit',month:'long',year:'numeric'})}`, margin+4, 282);
-  doc.text('ContaFácil — Salud Financiera', W-margin-4, 282, {align:'right'});
+  doc.setTextColor(70,68,65);
+  doc.text(`Generado el ${hoy} con ContaFácil`, M+5, 285);
+  doc.text('Este reporte presenta utilidad bruta. No incluye impuestos, intereses ni deducciones fiscales.', M+5, 290, {maxWidth:W-M*2-10});
 
-  // ── CONTENT PAGES ──
-  function addPage() {
-    doc.addPage();
-    y = margin;
-    // Header bar
-    rect(0,0,W,12,[248,246,241]);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-    setColor(C.muted);
-    doc.text(biz?.name||'Negocio', margin, 8);
-    doc.text(`${label} · ContaFácil`, W-margin, 8, {align:'right'});
-    line(0, 12, W);
-    y = 22;
-  }
+  // ── PAGE 2: CARTA EJECUTIVA ──
+  addPage();
+  doc.setFont('helvetica','bold'); doc.setFontSize(15);
+  doc.setTextColor(...C.dark);
+  doc.text('Análisis Ejecutivo del Período', M, y); y += 8;
+  hline(C.green, 0.8);
 
-  function sectionTitle(title) {
-    if (y > 255) addPage();
-    rect(margin, y, W-margin*2, 8, [240,237,230]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  doc.setTextColor(...C.muted);
+  doc.text(`${biz?.name||'Negocio'}  ·  ${label}  ·  Emitido: ${hoy}`, M, y); y += 10;
+
+  lines.forEach((line, i) => {
+    checkY(18);
+    doc.setFont('helvetica', i===lines.length-1 ? 'italic' : 'normal');
+    doc.setFontSize(i===lines.length-1 ? 8 : 9);
+    doc.setTextColor(...(i===lines.length-1 ? C.muted : C.dark));
+    const wrapped = doc.splitTextToSize(line, W-M*2);
+    doc.text(wrapped, M, y);
+    y += wrapped.length * (i===lines.length-1 ? 3.8 : 4.2) + 4;
+  });
+
+  // ── PAGE 3: ANÁLISIS NUMÉRICO ──
+  addPage();
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.setTextColor(...C.dark);
+  doc.text('Resultados del Período', M, y); y += 6;
+  hline(C.green, 0.6);
+
+  // Comparison vs prev
+  if (ingVar !== null || gasVar !== null) {
+    checkY(30);
     doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
-    setColor(C.dark); doc.text(title, margin+4, y+5.5);
-    y += 13;
+    doc.setTextColor(...C.dark);
+    doc.text('Comparativo vs período anterior', M, y); y += 6;
+    const compRows = [];
+    if (ingVar!==null) compRows.push(['Ingresos', fmt(ing), ingVar>=0?`+${ingVar.toFixed(1)}%`:`${ingVar.toFixed(1)}%`, ingVar>=0?'▲':'▼']);
+    if (gasVar!==null) compRows.push(['Gastos', fmt(gas), gasVar>=0?`+${gasVar.toFixed(1)}%`:`${gasVar.toFixed(1)}%`, gasVar>=0?'▲':'▼']);
+    const uVar = pUtil => pUtil!==0?((util-pUtil)/Math.abs(pUtil)*100):null;
+    const pUtil = prevTxs.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0) - prevTxs.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
+    const uv = pUtil!==0?((util-pUtil)/Math.abs(pUtil)*100):null;
+    if (uv!==null) compRows.push(['Util. Bruta', fmt(util), uv>=0?`+${uv.toFixed(1)}%`:`${uv.toFixed(1)}%`, uv>=0?'▲':'▼']);
+    compRows.push(['Margen', margen.toFixed(1)+'%', '', '']);
+    doc.autoTable({ head:[['Concepto','Período actual','Var. %','Tend.']], body:compRows, startY:y, margin:{left:M,right:M}, styles:{fontSize:8.5,cellPadding:2.5}, headStyles:{fillColor:C.dark,textColor:C.white,fontStyle:'bold'}, columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'center'}}, theme:'striped' });
+    y = doc.lastAutoTable.finalY + 10;
   }
 
-  function kpiRow(items) {
-    const w = (W - margin*2) / items.length;
-    items.forEach((k,i) => {
-      const kx = margin + i*w;
-      rect(kx, y, w-2, 18, k.bg||[248,246,241]);
-      doc.setFont('helvetica','normal'); doc.setFontSize(7);
-      setColor(C.muted); doc.text(k.label, kx+4, y+6);
-      doc.setFont('helvetica','bold'); doc.setFontSize(11);
-      doc.setTextColor(...k.color); doc.text(k.val, kx+4, y+14);
-    });
-    y += 22;
-  }
+  // YTD
+  checkY(25);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+  doc.setTextColor(...C.dark);
+  doc.text('Acumulado del año (YTD)', M, y); y += 6;
+  const anio = label.match(/\d{4}/)?.[0] || new Date().getFullYear().toString();
+  doc.autoTable({
+    head:[['Concepto','Acumulado YTD']], startY:y, margin:{left:M,right:M},
+    body:[['Ingresos acumulados', fmt(ytdIng)],['Gastos acumulados', fmt(ytdGas)],['Utilidad bruta acumulada', fmt(ytdIng-ytdGas)],['Margen YTD', ytdIng>0?((ytdIng-ytdGas)/ytdIng*100).toFixed(1)+'%':'—']],
+    styles:{fontSize:8.5,cellPadding:2.5}, headStyles:{fillColor:C.dark,textColor:C.white,fontStyle:'bold'}, columnStyles:{1:{halign:'right'}}, theme:'striped'
+  });
+  y = doc.lastAutoTable.finalY + 10;
 
-  // ── SECTION 1: RESUMEN EJECUTIVO ──
-  if (document.getElementById('sec_resumen').checked) {
-    addPage();
-    sectionTitle('1. RESUMEN EJECUTIVO');
-    kpiRow([
-      {label:'INGRESOS TOTALES', val:fmt(ing), color:C.green, bg:[234,245,238]},
-      {label:'GASTOS TOTALES', val:fmt(gas), color:C.red, bg:[253,240,238]},
-      {label:'UTILIDAD BRUTA', val:fmt(util), color:util>=0?C.green:C.red, bg:util>=0?[234,245,238]:[253,240,238]},
-      {label:'MARGEN', val:margen.toFixed(1)+'%', color:C.gold, bg:[253,246,227]},
-    ]);
-    const mesesActivos = Object.keys(txs.reduce((m,t)=>{m[t.fecha.substring(0,7)]=1;return m;},{})).length;
-    const ingTxs = txs.filter(t=>t.tipo==='ingreso');
-    const ticketProm = ingTxs.length>0 ? fmt(ing/ingTxs.length) : '$0';
-    kpiRow([
-      {label:'MOVIMIENTOS', val:txs.length.toString(), color:C.dark},
-      {label:'MESES CON ACTIVIDAD', val:mesesActivos.toString(), color:C.dark},
-      {label:'TICKET PROMEDIO', val:ticketProm, color:C.dark},
-      {label:'PERÍODO', val:label, color:C.blue},
-    ]);
-  }
-
-  // ── SECTION 2: ESTADO DE RESULTADOS ──
-  if (document.getElementById('sec_pl').checked) {
-    if (y > 200) addPage(); else { y += 5; line(margin,y,W-margin); y += 8; }
-    sectionTitle('2. ESTADO DE RESULTADOS');
-
-    const cats = {};
-    txs.forEach(t => {
-      if (!cats[t.tipo]) cats[t.tipo] = {};
-      const k = t.categoria||'otro';
-      cats[t.tipo][k] = (cats[t.tipo][k]||0) + t.monto;
-    });
-
-    const plRows = [];
-    plRows.push([{content:'INGRESOS', colSpan:3, styles:{fillColor:C.green, textColor:C.white, fontStyle:'bold', fontSize:8}}]);
-    Object.entries(cats.ingreso||{}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
-      plRows.push([CAT_LABELS[k]||k, fmt(v), ing>0?(v/ing*100).toFixed(1)+'%':'—']);
-    });
-    plRows.push([{content:'Total Ingresos', styles:{fontStyle:'bold'}}, {content:fmt(ing), styles:{fontStyle:'bold', textColor:C.green}}, '100%']);
-    plRows.push([{content:'COSTOS Y GASTOS', colSpan:3, styles:{fillColor:C.red, textColor:C.white, fontStyle:'bold', fontSize:8}}]);
-    Object.entries(cats.gasto||{}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
-      plRows.push([CAT_LABELS[k]||k, `(${fmt(v)})`, ing>0?(v/ing*100).toFixed(1)+'%':'—']);
-    });
-    plRows.push([{content:'Total Gastos', styles:{fontStyle:'bold'}}, {content:`(${fmt(gas)})`, styles:{fontStyle:'bold', textColor:C.red}}, ing>0?(gas/ing*100).toFixed(1)+'%':'—']);
-    plRows.push([{content:'UTILIDAD BRUTA', styles:{fontStyle:'bold', fillColor:[240,237,230]}}, {content:fmt(util), styles:{fontStyle:'bold', textColor:util>=0?C.green:C.red, fillColor:[240,237,230]}}, {content:margen.toFixed(1)+'%', styles:{fontStyle:'bold', fillColor:[240,237,230]}}]);
-
+  // Top gastos
+  if (topGastos.length > 0) {
+    checkY(25);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+    doc.setTextColor(...C.dark);
+    doc.text('Gastos más recurrentes por categoría', M, y); y += 6;
     doc.autoTable({
-      head: [['Concepto','Importe','% Ingresos']],
-      body: plRows,
-      startY: y,
-      margin: {left:margin, right:margin},
-      styles: {fontSize:8.5, cellPadding:2.5, font:'helvetica'},
-      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
-      columnStyles: {1:{halign:'right'}, 2:{halign:'right', cellWidth:22}},
-      theme:'grid',
+      head:[['Categoría','Importe','% del total']], startY:y, margin:{left:M,right:M},
+      body: topGastos.map(([k,v]) => [CAT_LABELS[k]||k, fmt(v), gas>0?(v/gas*100).toFixed(1)+'%':'—']),
+      styles:{fontSize:8.5,cellPadding:2.5}, headStyles:{fillColor:C.dark,textColor:C.white,fontStyle:'bold'}, columnStyles:{1:{halign:'right'},2:{halign:'right'}}, theme:'striped'
     });
-    y = doc.lastAutoTable.finalY + 8;
+    y = doc.lastAutoTable.finalY + 10;
   }
 
-  // ── SECTION 3: ANÁLISIS POR CATEGORÍA ──
-  if (document.getElementById('sec_cats').checked) {
-    if (y > 200) addPage(); else { y += 3; }
-    sectionTitle('3. ANÁLISIS POR CATEGORÍA DE GASTO');
-    const cats = {};
-    txs.filter(t=>t.tipo==='gasto').forEach(t => {
-      const k = t.categoria||'otro';
-      cats[k] = (cats[k]||0) + t.monto;
-    });
-    const catRows = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v]) => { const pct1=gas>0?(v/gas*100).toFixed(1)+'%':'0%'; const pct2=gas>0?(v/gas*100).toFixed(0)+'%':'0%'; return [CAT_LABELS[k]||k, fmt(v), pct1, pct2]; });
-    doc.autoTable({
-      head: [['Categoría','Importe','% del total','Participación']],
-      body: catRows,
-      startY: y,
-      margin: {left:margin, right:margin},
-      styles: {fontSize:8.5, cellPadding:2.5},
-      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
-      columnStyles: {1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'center'}},
-      theme:'striped',
-    });
-    y = doc.lastAutoTable.finalY + 8;
+  // ── PAGE 4: ESTADO DE RESULTADOS ──
+  addPage();
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.setTextColor(...C.dark);
+  doc.text('Estado de Resultados', M, y); y += 6;
+  hline(C.green, 0.6);
+
+  const catsPL = {};
+  txs.forEach(t => { if(!catsPL[t.tipo])catsPL[t.tipo]={}; const k=t.categoria||'otro'; catsPL[t.tipo][k]=(catsPL[t.tipo][k]||0)+t.monto; });
+  const plRows = [];
+  plRows.push([{content:'INGRESOS',colSpan:3,styles:{fillColor:C.green,textColor:C.white,fontStyle:'bold',fontSize:8}}]);
+  Object.entries(catsPL.ingreso||{}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => plRows.push([CAT_LABELS[k]||k, fmt(v), ing>0?(v/ing*100).toFixed(1)+'%':'—']));
+  plRows.push([{content:'Total Ingresos',styles:{fontStyle:'bold'}},{content:fmt(ing),styles:{fontStyle:'bold',textColor:C.green}},'100%']);
+  plRows.push([{content:'COSTOS Y GASTOS',colSpan:3,styles:{fillColor:C.red,textColor:C.white,fontStyle:'bold',fontSize:8}}]);
+  Object.entries(catsPL.gasto||{}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => plRows.push([CAT_LABELS[k]||k, `(${fmt(v)})`, ing>0?(v/ing*100).toFixed(1)+'%':'—']));
+  plRows.push([{content:'Total Gastos',styles:{fontStyle:'bold'}},{content:`(${fmt(gas)})`,styles:{fontStyle:'bold',textColor:C.red}}, ing>0?(gas/ing*100).toFixed(1)+'%':'—']);
+  plRows.push([{content:'UTILIDAD BRUTA',styles:{fontStyle:'bold',fillColor:[240,237,230]}},{content:fmt(util),styles:{fontStyle:'bold',textColor:util>=0?C.green:C.red,fillColor:[240,237,230]}},{content:margen.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[240,237,230]}}]);
+
+  doc.autoTable({ head:[['Concepto','Importe','% Ingresos']], body:plRows, startY:y, margin:{left:M,right:M}, styles:{fontSize:8.5,cellPadding:2.5}, headStyles:{fillColor:C.dark,textColor:C.white,fontStyle:'bold'}, columnStyles:{1:{halign:'right'},2:{halign:'right',cellWidth:22}}, theme:'grid' });
+  y = doc.lastAutoTable.finalY + 10;
+
+  // Comparativo mensual
+  checkY(20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+  doc.setTextColor(...C.dark);
+  doc.text('Comportamiento histórico mensual', M, y); y += 6;
+  const monthly2 = {};
+  txs.forEach(t => { const ym=t.fecha.substring(0,7); if(!monthly2[ym])monthly2[ym]={ing:0,gas:0}; monthly2[ym][t.tipo==='ingreso'?'ing':'gas']+=t.monto; });
+  const MMAP2 = {'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
+  const mensualRows = Object.entries(monthly2).sort().map(([m,v]) => { const u=v.ing-v.gas; return [`${MMAP2[m.split('-')[1]]||m} ${m.split('-')[0]}`, fmt(v.ing), fmt(v.gas), fmt(u), v.ing>0?(u/v.ing*100).toFixed(1)+'%':'—']; });
+  doc.autoTable({ head:[['Mes','Ingresos','Gastos','Util. Bruta','Margen']], body:mensualRows, startY:y, margin:{left:M,right:M}, styles:{fontSize:8.5,cellPadding:2.5}, headStyles:{fillColor:C.dark,textColor:C.white,fontStyle:'bold'}, columnStyles:{1:{halign:'right',textColor:C.green},2:{halign:'right',textColor:C.red},3:{halign:'right'},4:{halign:'right'}}, theme:'striped' });
+  y = doc.lastAutoTable.finalY + 10;
+
+  // ── PÁGINA FINAL: FIRMA ──
+  addPage();
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.setTextColor(...C.dark);
+  doc.text('Declaración y Firma', M, y); y += 6;
+  hline(C.green, 0.6);
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.setTextColor(...C.dark);
+  const declaracion = `El suscrito declara que la información financiera contenida en el presente reporte corresponde a los registros internos de ${biz?.name||'el negocio'} para el período ${label}, y que ha sido preparada de buena fe con base en los datos disponibles al momento de su emisión. La utilidad presentada es utilidad bruta y no considera efectos fiscales, financieros ni contables adicionales.`;
+  const declWrapped = doc.splitTextToSize(declaracion, W-M*2);
+  doc.text(declWrapped, M, y);
+  y += declWrapped.length * 4.2 + 15;
+
+  // Firma image
+  if (firmaDataUrl) {
+    try {
+      doc.addImage(firmaDataUrl, 'PNG', M, y, 50, 20, '', 'FAST');
+      y += 24;
+    } catch(e) {}
+  } else {
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.3);
+    doc.line(M, y+15, M+70, y+15);
+    y += 20;
   }
 
-  // ── SECTION 4: COMPARATIVO MENSUAL ──
-  if (document.getElementById('sec_mensual').checked) {
-    addPage();
-    sectionTitle('4. COMPARATIVO MENSUAL');
-    const monthly = {};
-    txs.forEach(t => {
-      const ym = t.fecha.substring(0,7);
-      if (!monthly[ym]) monthly[ym] = {ing:0,gas:0};
-      monthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
-    });
-    const mNames = {
-      '01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
-      '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'
-    };
-    const monthRows = Object.entries(monthly).sort().map(([m,v]) => {
-      const u = v.ing - v.gas;
-      const mg = v.ing>0?(u/v.ing*100):0;
-      return [
-        `${mNames[m.split('-')[1]]||m} ${m.split('-')[0]}`,
-        fmt(v.ing), fmt(v.gas), fmt(u), mg.toFixed(1)+'%'
-      ];
-    });
-    // Totals row
-    monthRows.push([{content:'TOTAL',styles:{fontStyle:'bold'}}, {content:fmt(ing),styles:{fontStyle:'bold',textColor:C.green}}, {content:fmt(gas),styles:{fontStyle:'bold',textColor:C.red}}, {content:fmt(util),styles:{fontStyle:'bold',textColor:util>=0?C.green:C.red}}, {content:margen.toFixed(1)+'%',styles:{fontStyle:'bold'}}]);
+  // Name and date
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+  doc.setTextColor(...C.dark);
+  doc.text(dueno || '________________________________', M, y); y += 5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  doc.setTextColor(...C.muted);
+  doc.text(dueno ? 'Nombre del responsable' : 'Nombre del responsable', M, y); y += 10;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.setTextColor(...C.dark);
+  doc.text(`Fecha: ${hoy}`, M, y); y += 5;
+  doc.text(`Lugar: ________________________________`, M, y); y += 15;
 
-    doc.autoTable({
-      head: [['Mes','Ingresos','Gastos','Utilidad','Margen']],
-      body: monthRows,
-      startY: y,
-      margin: {left:margin, right:margin},
-      styles: {fontSize:8.5, cellPadding:2.5},
-      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
-      columnStyles: {1:{halign:'right',textColor:C.green}, 2:{halign:'right',textColor:C.red}, 3:{halign:'right'}, 4:{halign:'right'}},
-      theme:'striped',
-    });
-    y = doc.lastAutoTable.finalY + 8;
-  }
+  // Footer note
+  doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
+  doc.setTextColor(...C.muted);
+  doc.text('Este documento fue generado digitalmente por ContaFácil. La utilidad bruta presentada no incluye impuestos,', M, y, {maxWidth:W-M*2}); y += 4;
+  doc.text('intereses, depreciaciones ni amortizaciones. Para efectos fiscales, consulte a su contador certificado.', M, y, {maxWidth:W-M*2});
 
-  // ── SECTION 5: FORECAST ──
-  if (document.getElementById('sec_forecast').checked) {
-    if (y > 200) addPage(); else { y += 3; }
-    sectionTitle('5. FORECAST — PRÓXIMOS 3 MESES');
-
-    // Calculate forecast
-    const allTxs = S.transactions;
-    const allMonthly = {};
-    allTxs.forEach(t => {
-      const ym = t.fecha.substring(0,7);
-      if (!allMonthly[ym]) allMonthly[ym] = {ing:0,gas:0};
-      allMonthly[ym][t.tipo==='ingreso'?'ing':'gas'] += t.monto;
-    });
-    const allMonths = Object.entries(allMonthly).sort();
-    const ALPHA = 0.4;
-    function expGrowth(vals) {
-      if (vals.length<2) return 0;
-      const rates = [];
-      for (let i=1;i<vals.length;i++) rates.push(vals[i-1]>0?(vals[i]-vals[i-1])/vals[i-1]:0);
-      let s = rates[0];
-      for (let i=1;i<rates.length;i++) s = ALPHA*rates[i]+(1-ALPHA)*s;
-      return Math.max(-0.3,Math.min(0.3,s));
-    }
-    const aIng = allMonths.map(([,v])=>v.ing);
-    const aGas = allMonths.map(([,v])=>v.gas);
-    const iG = expGrowth(aIng), gG = expGrowth(aGas);
-    const lastI = aIng[aIng.length-1]||0, lastG = aGas[aGas.length-1]||0;
-    const lastMStr = allMonths[allMonths.length-1]?.[0]||`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
-    const [lY,lM] = lastMStr.split('-').map(Number);
-    const fcRows = [];
-    for (let i=1;i<=3;i++) {
-      let m=lM+i, yr=lY; if(m>12){m-=12;yr++;}
-      const lbl=`${yr}-${String(m).padStart(2,'0')}`;
-      const pi=lastI*Math.pow(1+iG,i), pg=lastG*Math.pow(1+gG,i);
-      const pu=pi-pg, pm=pi>0?(pu/pi*100):0;
-      fcRows.push([lbl, fmt(Math.max(0,pi)), fmt(Math.max(0,pg)), fmt(pu), pm.toFixed(1)+'%', {content:'Estimado', styles:{textColor:C.gold, fontStyle:'italic'}}]);
-    }
-    doc.autoTable({
-      head: [['Mes','Ingresos est.','Gastos est.','Utilidad est.','Margen est.','Tipo']],
-      body: fcRows,
-      startY: y,
-      margin: {left:margin, right:margin},
-      styles: {fontSize:8.5, cellPadding:2.5, fillColor:[253,246,227]},
-      headStyles: {fillColor:C.dark, textColor:C.white, fontStyle:'bold'},
-      columnStyles: {1:{halign:'right',textColor:C.green}, 2:{halign:'right',textColor:C.red}, 3:{halign:'right'}, 4:{halign:'right'}, 5:{halign:'center'}},
-      theme:'grid',
-    });
-    y = doc.lastAutoTable.finalY + 8;
-
-    // Disclaimer
-    doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
-    setColor(C.muted);
-    doc.text('* El forecast es una proyección basada en tendencias históricas usando suavización exponencial (α=0.4). No constituye una garantía de resultados futuros.', margin, y, {maxWidth: W-margin*2});
-  }
-
-  // ── LAST PAGE FOOTER ──
+  // Page numbers
   const pageCount = doc.getNumberOfPages();
-  for (let i=1; i<=pageCount; i++) {
+  for (let i=2; i<=pageCount; i++) {
     doc.setPage(i);
-    if (i > 1) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(7);
-      setColor(C.muted);
-      doc.text(`Página ${i} de ${pageCount}`, W/2, 290, {align:'center'});
-      line(margin, 285, W-margin);
-    }
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.setTextColor(...C.muted);
+    doc.text(`Página ${i-1} de ${pageCount-1}`, W/2, 291, {align:'center'});
   }
 
-  // Save
-  const fname = `reporte_${(biz?.name||'negocio').replace(/\s+/g,'_')}_${label.replace(/\s+/g,'_')}.pdf`;
+  const fname = `reporte_ejecutivo_${(biz?.name||'negocio').replace(/\s+/g,'_')}_${label.replace(/\s+/g,'_')}.pdf`;
   doc.save(fname);
-
   btn.disabled = false; btn.textContent = '📄 Generar y descargar PDF';
-  showToast('✅ PDF descargado', 'ok');
+  showToast('✅ PDF descargado exitosamente', 'ok');
 }
 
 // ── SIMULADOR DE INVERSIÓN ──────────────────────────────────────────
