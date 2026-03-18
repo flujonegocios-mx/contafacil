@@ -501,10 +501,10 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1rem;margin-bottom:1rem" id="insightRow">
         <div class="card" style="padding:1.25rem 1.4rem">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.15rem">
-            <div class="card-title">Desglose del período</div>
+            <div class="card-title">Salud financiera por categoría</div>
             <div id="top3RatioLabel" style="font-size:0.7rem;color:var(--ink-muted)"></div>
           </div>
-          <div class="card-sub" style="margin-bottom:0.85rem">De cada $100 de ingreso, ¿cuánto va a cada gasto?</div>
+          <div class="card-sub" style="margin-bottom:0.85rem">Semáforo vs rangos saludables para tu tipo de negocio</div>
           <div id="top3List"></div>
         </div>
         <!-- Quick stats panel -->
@@ -1592,6 +1592,18 @@ function renderTrend(elId, current, previous) {
   }
 }
 
+// Límites saludables por categoría (% máximo recomendado sobre ingresos)
+const CAT_LIMITES = {
+  renta:        { max: 15, label: 'Renta > 15% de ingresos es alto' },
+  nomina:       { max: 35, label: 'Nómina > 35% puede comprometer liquidez' },
+  mercancia:    { max: 50, label: 'Costo de mercancía > 50% reduce margen' },
+  marketing:    { max: 10, label: 'Marketing > 10% revisa retorno' },
+  transporte:   { max: 8,  label: 'Transporte > 8% optimiza rutas' },
+  servicios_pub:{ max: 5,  label: 'Servicios públicos > 5% revisa consumo' },
+  servicios:    { max: 12, label: 'Servicios externos > 12% considera internalizar' },
+  otro:         { max: 10, label: 'Gastos sin categoría > 10% — clasifícalos' },
+};
+
 function renderTop3(filtered) {
   const totalIng = filtered.filter(t=>t.tipo==='ingreso').reduce((s,t)=>s+t.monto,0);
   const totalGas = filtered.filter(t=>t.tipo==='gasto').reduce((s,t)=>s+t.monto,0);
@@ -1608,32 +1620,57 @@ function renderTop3(filtered) {
     return;
   }
 
-  // Ratio label: cents of gas per dollar of ing
+  // Header ratio
   if(ratioLabel && totalIng > 0) {
     const ratio = (totalGas/totalIng*100).toFixed(1);
     const color = ratio < 60 ? 'var(--green)' : ratio < 85 ? 'var(--gold)' : 'var(--red)';
     ratioLabel.innerHTML = `Gastas <strong style="color:${color}">${ratio}¢</strong> por cada $1 de ingreso`;
   }
 
-  // Show all categories as ratio per $100 of income
   const base = totalIng > 0 ? totalIng : totalGas;
   el.innerHTML = sorted.map(([cat,val])=>{
-    const pctOfIng = base > 0 ? (val/base*100) : 0;
-    const pctOfGas = totalGas > 0 ? (val/totalGas*100) : 0;
-    const color = pctOfIng > 30 ? 'var(--red)' : pctOfIng > 15 ? 'var(--gold)' : 'var(--ink-muted)';
-    return `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid rgba(226,221,212,0.4)">
-      <div style="width:28px;height:28px;border-radius:7px;background:${color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <div style="width:8px;height:8px;border-radius:50%;background:${color}"></div>
+    const pctOfIng  = base > 0 ? (val/base*100) : 0;
+    const pctOfGas  = totalGas > 0 ? (val/totalGas*100) : 0;
+    const limite    = CAT_LIMITES[cat];
+    const maxPct    = limite ? limite.max : 20;
+    const ratio     = pctOfIng;
+
+    // Semáforo: verde < max, amarillo < max*1.5, rojo >= max*1.5
+    let semaforo, semaforoColor, semaforoLabel;
+    if (ratio <= maxPct) {
+      semaforo = '●'; semaforoColor = 'var(--green)'; semaforoLabel = 'Dentro del rango';
+    } else if (ratio <= maxPct * 1.5) {
+      semaforo = '●'; semaforoColor = 'var(--gold)'; semaforoLabel = 'Atención — ligeramente alto';
+    } else {
+      semaforo = '●'; semaforoColor = 'var(--red)'; semaforoLabel = limite ? limite.label : 'Alto — revisa este gasto';
+    }
+
+    // Bar fill — relative to max recommended
+    const barPct = Math.min((ratio / (maxPct * 2)) * 100, 100);
+
+    return `<div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid rgba(226,221,212,0.35)">
+      <!-- Semáforo dot -->
+      <div style="padding-top:3px;flex-shrink:0">
+        <span style="color:${semaforoColor};font-size:0.7rem" title="${semaforoLabel}">●</span>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
           <span style="font-size:0.82rem;font-weight:600">${CAT_LABELS[cat]||cat}</span>
-          <span style="font-size:0.82rem;font-weight:700;color:${color};flex-shrink:0;margin-left:0.5rem">${fmt(val)}</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;margin-left:0.5rem">
+            <span style="font-size:0.7rem;color:${semaforoColor};font-weight:600;background:${semaforoColor}15;padding:0.1rem 0.4rem;border-radius:4px">${ratio.toFixed(1)}% ing.</span>
+            <span style="font-size:0.82rem;font-weight:700;color:var(--ink)">${fmt(val)}</span>
+          </div>
         </div>
-        <div style="background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
-          <div style="width:${Math.min(pctOfIng,100).toFixed(1)}%;height:4px;border-radius:99px;background:${color};opacity:0.75;transition:width .6s ease"></div>
+        <!-- Bar: actual vs recommended max -->
+        <div style="display:flex;align-items:center;gap:0.4rem">
+          <div style="flex:1;background:var(--surface2);border-radius:99px;height:4px;overflow:hidden;position:relative">
+            <div style="width:${barPct.toFixed(1)}%;height:4px;border-radius:99px;background:${semaforoColor};transition:width .6s ease"></div>
+            <!-- Max recommended marker -->
+            <div style="position:absolute;top:0;left:50%;width:1.5px;height:4px;background:rgba(0,0,0,0.15)"></div>
+          </div>
+          <span style="font-size:0.62rem;color:var(--ink-muted);white-space:nowrap;flex-shrink:0">máx ${maxPct}%</span>
         </div>
-        <div style="font-size:0.67rem;color:var(--ink-muted);margin-top:2px">${pctOfGas.toFixed(1)}% del gasto total</div>
+        <div style="font-size:0.67rem;color:var(--ink-muted);margin-top:1px">${pctOfGas.toFixed(1)}% del gasto · ${semaforoLabel}</div>
       </div>
     </div>`;
   }).join('');
@@ -1766,7 +1803,13 @@ function renderCharts(filtered) {
         labels: wLabels,
         datasets:[
           {label:'Ingresos', data:wIng.map(v=>v>0?Math.max(v,minBar):0), backgroundColor:'rgba(30,122,69,0.78)', borderRadius:6, borderSkipped:false},
-          {label:'Gastos',   data:wGas.map(v=>v>0?Math.max(v,minBar):0), backgroundColor:'rgba(192,57,43,0.72)', borderRadius:6, borderSkipped:false}
+          {label:'Gastos',   data:wGas.map(v=>v>0?Math.max(v,minBar):0), backgroundColor:'rgba(192,57,43,0.72)', borderRadius:6, borderSkipped:false},
+          {label:'Acumulado', type:'line',
+            data: wIng.reduce((acc,v,i)=>{acc.push((acc[i-1]||0)+v);return acc;},[]),
+            borderColor:'rgba(30,122,69,0.9)', backgroundColor:'rgba(30,122,69,0.08)',
+            borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#fff',
+            pointBorderColor:'rgba(30,122,69,0.9)', pointBorderWidth:2,
+            tension:0.35, fill:true, yAxisID:'y', order:0}
         ]
       },
       options:{
@@ -1777,7 +1820,11 @@ function renderCharts(filtered) {
             backgroundColor:'rgba(28,26,23,0.92)',
             titleColor:'#fff', bodyColor:'rgba(255,255,255,0.8)',
             padding:10, cornerRadius:8, displayColors:true,
-            callbacks:{label:(c)=>{const real=c.datasetIndex===0?wIng[c.dataIndex]:wGas[c.dataIndex]; return `  ${fmt(real)}`;}}}
+            callbacks:{label:(c)=>{
+              if(c.datasetIndex===2) return `  Acumulado: ${fmt(c.raw)}`;
+              const real=c.datasetIndex===0?wIng[c.dataIndex]:wGas[c.dataIndex];
+              return `  ${fmt(real)}`;
+            }}}}
         },
         scales:{
           x:{grid:{display:false},border:{display:false},ticks:{color:'#8a8270',font:{size:11},padding:6}},
@@ -1798,7 +1845,13 @@ function renderCharts(filtered) {
         labels: months.map(fmtMonthLabel),
         datasets:[
           {label:'Ingresos', data:ingData, backgroundColor:'rgba(30,122,69,0.78)', borderRadius:6, borderSkipped:false},
-          {label:'Gastos',   data:gasData, backgroundColor:'rgba(192,57,43,0.72)', borderRadius:6, borderSkipped:false}
+          {label:'Gastos',   data:gasData, backgroundColor:'rgba(192,57,43,0.72)', borderRadius:6, borderSkipped:false},
+          {label:'Acumulado', type:'line',
+            data: months.map(m=>monthly[m].ing).reduce((acc,v,i)=>{acc.push((acc[i-1]||0)+v);return acc;},[]),
+            borderColor:'rgba(30,122,69,0.9)', backgroundColor:'rgba(30,122,69,0.07)',
+            borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#fff',
+            pointBorderColor:'rgba(30,122,69,0.9)', pointBorderWidth:2,
+            tension:0.35, fill:true, yAxisID:'y', order:0}
         ]
       },
       options:{
@@ -1809,7 +1862,11 @@ function renderCharts(filtered) {
             backgroundColor:'rgba(28,26,23,0.92)',
             titleColor:'#fff', bodyColor:'rgba(255,255,255,0.8)',
             padding:10, cornerRadius:8, displayColors:true,
-            callbacks:{label:(c)=>{const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex]; return `  ${fmt(real)}`;}}}
+            callbacks:{label:(c)=>{
+              if(c.datasetIndex===2) return `  Acumulado: ${fmt(c.raw)}`;
+              const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex];
+              return `  ${fmt(real)}`;
+            }}}}
         },
         scales:{
           x:{grid:{display:false},border:{display:false},ticks:{color:'#8a8270',font:{size:11},padding:6}},
