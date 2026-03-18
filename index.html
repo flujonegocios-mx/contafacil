@@ -1759,9 +1759,47 @@ function renderCharts(filtered) {
   // ── Pie chart: same filtered transactions ──
   const catMap={};
   filtered.filter(t=>t.tipo==='gasto').forEach(t=>{const k=t.categoria||'otro';catMap[k]=(catMap[k]||0)+t.monto;});
-  const cats=Object.keys(catMap);
+  // Sort by value descending so biggest slice is first
+  const cats = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([k])=>k);
+  const catVals = cats.map(c=>catMap[c]);
+  // Extended palette — enough for all 9+ categories
+  const PIE_COLORS = ['#2d6a4f','#457b9d','#e9c46a','#e76f51','#264653','#6d6875','#f4a261','#a8dadc','#95d5b2','#74c69d'];
+  const bgColors = cats.map((_,i)=>PIE_COLORS[i%PIE_COLORS.length]+'cc');
+  const bdColors = cats.map((_,i)=>PIE_COLORS[i%PIE_COLORS.length]);
   if(pieChart)pieChart.destroy();
-  pieChart=new Chart(document.getElementById('pieChart').getContext('2d'),{type:'doughnut',data:{labels:cats.length?cats.map(c=>CAT_LABELS[c]||c):['Sin gastos'],datasets:[{data:cats.length?cats.map(c=>catMap[c]):[1],backgroundColor:PALETTE.map(c=>c+'cc'),borderColor:PALETTE,borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#8a8270',font:{size:10},padding:8,boxWidth:8}},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}}}}});
+  const totalGasChart = catVals.reduce((s,v)=>s+v,0);
+  pieChart=new Chart(document.getElementById('pieChart').getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels: cats.length ? cats.map(c=>CAT_LABELS[c]||c) : ['Sin gastos'],
+      datasets:[{
+        data: cats.length ? catVals : [1],
+        backgroundColor: bgColors,
+        borderColor: '#fff',
+        borderWidth: 2,
+        hoverOffset: 8
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      cutout:'60%',
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{color:'#8a8270',font:{size:10},padding:10,boxWidth:10,usePointStyle:true,pointStyleWidth:8}
+        },
+        tooltip:{
+          callbacks:{
+            label: c => {
+              const pct = totalGasChart>0 ? ((c.raw/totalGasChart)*100).toFixed(1) : 0;
+              return `  ${fmt(c.raw)}  (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 let _recentShowMore = false;
@@ -2259,6 +2297,69 @@ function parseDate(val) {
   return null;
 }
 
+// ── AI CATEGORY CLASSIFIER ──────────────────────────────────────
+async function clasificarCategorias(movimientos) {
+  // movimientos = [{concepto, tipo, catRaw}]
+  // Returns array of category keys in same order
+  const KEYS = 'renta, nomina, marketing, mercancia, servicios_pub, transporte, ventas, servicios, otro';
+  const lines = movimientos.map((m,i) =>
+    `${i+1}. concepto="${m.concepto}" tipo=${m.tipo}${m.catRaw?' categoria_original="'+m.catRaw+'"':''}`
+  ).join('\n');
+
+  const prompt = `Eres un clasificador de movimientos financieros para pequeñas empresas mexicanas.
+Clasifica cada movimiento en UNA de estas categorías exactas (usa solo estas claves):
+${KEYS}
+
+Reglas:
+- renta: alquiler de local, oficina, bodega, renta de inmueble
+- nomina: sueldos, salarios, honorarios a empleados, pago de personal
+- marketing: publicidad, redes sociales, diseño, promociones, imprenta
+- mercancia: compra de productos para vender, inventario, materia prima, insumos
+- servicios_pub: luz, agua, gas, teléfono, internet, CFE, TELMEX, servicios municipales
+- transporte: fletes, envíos, gasolina, repartidor, mensajería, logística
+- ventas: ingresos por ventas, cobros a clientes, servicios prestados (si tipo=ingreso)
+- servicios: servicios profesionales prestados o recibidos, consultoría, contabilidad
+- otro: cualquier cosa que no encaje claramente
+
+Movimientos:
+${lines}
+
+Responde SOLO con un JSON array con las claves en el mismo orden, ejemplo: ["renta","ventas","nomina"]
+Sin explicación, sin texto adicional, solo el JSON array.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text?.trim() || '[]';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(clean);
+    if(Array.isArray(result) && result.length === movimientos.length) return result;
+  } catch(e) {
+    console.warn('AI clasificación falló, usando fallback:', e.message);
+  }
+  // Fallback: rule-based
+  return movimientos.map(m => {
+    const t = (m.concepto + ' ' + (m.catRaw||'')).toLowerCase();
+    if(t.includes('renta')||t.includes('alquiler')||t.includes('arrend')) return 'renta';
+    if(t.includes('nomin')||t.includes('sueldo')||t.includes('salario')) return 'nomina';
+    if(t.includes('market')||t.includes('publici')||t.includes('promoc')) return 'marketing';
+    if(t.includes('mercan')||t.includes('inventar')||t.includes('compra de')) return 'mercancia';
+    if(t.includes('cfe')||t.includes('telmex')||t.includes('luz ')||t.includes('agua')||t.includes('internet')) return 'servicios_pub';
+    if(t.includes('transport')||t.includes('envio')||t.includes('flete')||t.includes('gasolina')) return 'transporte';
+    if(t.includes('venta')||t.includes('cobro')||t.includes('ingreso')) return 'ventas';
+    if(t.includes('servic')||t.includes('consult')||t.includes('honorar')) return m.tipo==='ingreso'?'servicios':'servicios_pub';
+    return m.tipo==='ingreso'?'ventas':'otro';
+  });
+}
+
 async function runImport() {
   const fechaIdx = parseInt(document.getElementById('map_fecha').value);
   const conceptoIdx = parseInt(document.getElementById('map_concepto').value);
@@ -2275,11 +2376,12 @@ async function runImport() {
     return showToast('Sin conexión a internet. Reconéctate e intenta de nuevo.', 'err');
 
   const btn = document.querySelector('#importStep2 .btn-submit');
-  btn.disabled = true; btn.textContent = 'Importando...';
+  btn.disabled = true; btn.textContent = 'Clasificando con IA...';
 
   let ok = 0, skip = 0;
-  const batch = [];
+  const validRows = [];
 
+  // First pass: parse all valid rows
   for (const row of importedRows) {
     const fecha = parseDate(row[fechaIdx]);
     const concepto = String(row[conceptoIdx] || '').trim();
@@ -2291,10 +2393,30 @@ async function runImport() {
       if (t.includes('gasto') || t.includes('egreso') || t.includes('expense')) tipo = 'gasto';
       else if (t.includes('ingreso') || t.includes('venta') || t.includes('income')) tipo = 'ingreso';
     }
-    const categoria = catIdx >= 0 ? String(row[catIdx]||'').toLowerCase().trim() : (tipo === 'ingreso' ? 'ventas' : 'otro');
-    batch.push({ business_id: S.activeBizId, user_id: S.user.id, tipo, concepto, monto, categoria: categoria||'otro', fecha });
-    ok++;
+    const catRaw = catIdx >= 0 ? String(row[catIdx]||'').toLowerCase().trim() : '';
+    validRows.push({ fecha, concepto, monto, tipo, catRaw });
   }
+
+  if(!validRows.length) {
+    btn.disabled = false; btn.textContent = 'Importar movimientos';
+    return showToast('No se encontraron filas válidas para importar.', 'err');
+  }
+
+  // Second pass: AI classify all in one call
+  btn.textContent = `Clasificando ${validRows.length} movimientos con IA...`;
+  const categorias = await clasificarCategorias(validRows);
+
+  btn.textContent = 'Guardando...';
+  const batch = validRows.map((r, i) => ({
+    business_id: S.activeBizId,
+    user_id: S.user.id,
+    tipo: r.tipo,
+    concepto: r.concepto,
+    monto: r.monto,
+    categoria: categorias[i] || (r.tipo==='ingreso'?'ventas':'otro'),
+    fecha: r.fecha
+  }));
+  ok = batch.length;
 
   if (batch.length > 0) {
     // 1. Create import record first
