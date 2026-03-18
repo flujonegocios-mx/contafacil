@@ -115,13 +115,15 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .period-btn.active { background:var(--ink); color:#fff; font-weight:600; border-radius:6px; }
 .period-btn.active { background:var(--ink); color:#fff; font-weight:600; }
 
-.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-.kpi-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--border); border-radius:var(--radius); padding:1.5rem 1.5rem 1.25rem; transition:box-shadow 0.15s; }
-.kpi-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; margin-bottom:1.5rem; }
+.kpi-card { background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.4rem 1.1rem; transition:box-shadow 0.2s,transform 0.2s; position:relative; overflow:hidden; }
+.kpi-card::before { content:''; position:absolute; inset:0; opacity:0; background:linear-gradient(135deg,rgba(255,255,255,0.6),transparent); transition:opacity 0.2s; pointer-events:none; }
+.kpi-card:hover { box-shadow:0 6px 24px rgba(0,0,0,0.08); transform:translateY(-2px); }
+.kpi-card:hover::before { opacity:1; }
 .kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.85rem; }
-.kpi-label { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-muted); font-weight:700; }
+.kpi-label { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--ink-muted); font-weight:600; opacity:0.7; }
 .kpi-icon { display:none; }
-.kpi-value { font-family:'Syne',sans-serif; font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+.kpi-value { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-0.04em; line-height:1; }
 .kpi-sub { font-size:0.71rem; margin-top:0.6rem; color:var(--ink-muted); display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap; }
 .kpi-delta { font-size:0.68rem; font-weight:700; padding:0.15rem 0.4rem; border-radius:4px; }
 .kpi-trend { font-size:0.72rem; font-weight:600; margin-top:0.45rem; display:flex; align-items:center; gap:0.25rem; }
@@ -144,11 +146,11 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
 .text-green { color:var(--green); }
 .text-red { color:var(--red); }
 
-.charts-row { display:grid; grid-template-columns:1.7fr 1fr; gap:1.25rem; margin-bottom:1.25rem; }
+.charts-row { display:grid; grid-template-columns:1.6fr 1fr; gap:1rem; margin-bottom:1rem; align-items:start; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.4rem; }
 .card-title { font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:700; margin-bottom:0.2rem; }
 .card-sub { font-size:0.73rem; color:var(--ink-muted); margin-bottom:1.1rem; }
-.chart-wrap { position:relative; height:220px; }
+.chart-wrap { position:relative; height:240px; }
 
 .bottom-row { display:grid; grid-template-columns:1fr; gap:1.25rem; }
 .add-tx-card { display:none; }
@@ -449,7 +451,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         </div>
       </div>
       <div class="kpi-row">
-        <div class="kpi-card" style="border-left-color:var(--green)">
+        <div class="kpi-card" style="border-top-color:var(--green)">
           <div class="kpi-top"><div class="kpi-label">Ingresos</div></div>
           <div class="kpi-value text-green" id="kpiIng">$0</div>
           <div class="kpi-sub" id="kpiIngSub">en el período</div>
@@ -464,7 +466,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
             </div>
           </div>
         </div>
-        <div class="kpi-card" style="border-left-color:var(--red)">
+        <div class="kpi-card" style="border-top-color:var(--red)">
           <div class="kpi-top"><div class="kpi-label">Gastos</div></div>
           <div class="kpi-value text-red" id="kpiGas">$0</div>
           <div class="kpi-sub">en el período</div>
@@ -479,13 +481,13 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
             </div>
           </div>
         </div>
-        <div class="kpi-card" style="border-left-color:var(--gold)">
+        <div class="kpi-card" style="border-top-color:var(--gold)">
           <div class="kpi-top"><div class="kpi-label">Utilidad Bruta</div></div>
           <div class="kpi-value" id="kpiUtil">$0</div>
           <div class="kpi-sub" id="kpiMargen">Margen: 0%</div>
           <div class="kpi-trend" id="kpiUtilTrend"></div>
         </div>
-        <div class="kpi-card" style="border-left-color:var(--blue)">
+        <div class="kpi-card" style="border-top-color:var(--blue)">
           <div class="kpi-top"><div class="kpi-label">Movimientos</div></div>
           <div class="kpi-value" id="kpiMov">0</div>
           <div class="kpi-sub" id="kpiMovSub"><span id="kpiMovPeriod">0</span> en período · <span id="kpiMovTotal">0</span> totales</div>
@@ -495,15 +497,20 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <div class="card"><div class="card-title">Ingresos vs Gastos</div><div class="card-sub" id="barChartSub">Este mes</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
         <div class="card"><div class="card-title">Gastos por Categoría</div><div class="card-sub">Distribución del período</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
       </div>
-      <!-- Resumen financiero rápido -->
-      <div style="margin-bottom:1.25rem" id="insightRow">
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.2rem">
+      <!-- Desglose + Resumen lado a lado -->
+      <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1rem;margin-bottom:1rem" id="insightRow">
+        <div class="card" style="padding:1.25rem 1.4rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.15rem">
             <div class="card-title">Desglose del período</div>
-            <div id="top3RatioLabel" style="font-size:0.72rem;color:var(--ink-muted)"></div>
+            <div id="top3RatioLabel" style="font-size:0.7rem;color:var(--ink-muted)"></div>
           </div>
-          <div class="card-sub" style="margin-bottom:1rem">De cada $100 de ingreso, ¿cuánto va a cada gasto?</div>
+          <div class="card-sub" style="margin-bottom:0.85rem">De cada $100 de ingreso, ¿cuánto va a cada gasto?</div>
           <div id="top3List"></div>
+        </div>
+        <!-- Quick stats panel -->
+        <div class="card" style="padding:1.25rem 1.4rem;display:flex;flex-direction:column;gap:0.85rem">
+          <div class="card-title" style="margin-bottom:0">Resumen rápido</div>
+          <div id="quickStatsContent" style="display:flex;flex-direction:column;gap:0.7rem;flex:1"></div>
         </div>
       </div>
       <div class="bottom-row">
@@ -1310,7 +1317,11 @@ function renderBizList() {
 async function loadTransactions() {
   if (!S.activeBizId) return;
   const { data } = await sb.from('transactions').select('*').eq('business_id', S.activeBizId).order('fecha', { ascending:false });
-  S.transactions = data || [];
+  // Normalize categoria to lowercase so "Renta" === "renta" === "RENTA"
+  S.transactions = (data || []).map(t => ({
+    ...t,
+    categoria: (t.categoria||'otro').toLowerCase().trim()
+  }));
 }
 
 function setTxType(type) {
@@ -1610,22 +1621,65 @@ function renderTop3(filtered) {
     const pctOfIng = base > 0 ? (val/base*100) : 0;
     const pctOfGas = totalGas > 0 ? (val/totalGas*100) : 0;
     const color = pctOfIng > 30 ? 'var(--red)' : pctOfIng > 15 ? 'var(--gold)' : 'var(--ink-muted)';
-    return `<div class="top3-item">
-      <div class="top3-bar-wrap">
-        <div class="top3-label">
-          <span>${CAT_LABELS[cat]||cat}</span>
-          <div style="display:flex;align-items:center;gap:0.6rem">
-            <span style="font-size:0.7rem;color:var(--ink-muted)">${pctOfGas.toFixed(1)}% del gasto</span>
-            <span style="color:${color};font-weight:700">${fmt(val)}</span>
-          </div>
+    return `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid rgba(226,221,212,0.4)">
+      <div style="width:28px;height:28px;border-radius:7px;background:${color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="width:8px;height:8px;border-radius:50%;background:${color}"></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+          <span style="font-size:0.82rem;font-weight:600">${CAT_LABELS[cat]||cat}</span>
+          <span style="font-size:0.82rem;font-weight:700;color:${color};flex-shrink:0;margin-left:0.5rem">${fmt(val)}</span>
         </div>
-        <div class="top3-bar-bg"><div class="top3-bar-fill" style="width:${Math.min(pctOfIng,100).toFixed(1)}%;background:${color};opacity:0.8"></div></div>
+        <div style="background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
+          <div style="width:${Math.min(pctOfIng,100).toFixed(1)}%;height:4px;border-radius:99px;background:${color};opacity:0.75;transition:width .6s ease"></div>
+        </div>
+        <div style="font-size:0.67rem;color:var(--ink-muted);margin-top:2px">${pctOfGas.toFixed(1)}% del gasto total</div>
       </div>
     </div>`;
   }).join('');
 }
 
 // renderMeta replaced by renderCircles()
+
+
+function renderQuickStats(filtered, ing, gas, util, margen) {
+  const el = document.getElementById('quickStatsContent');
+  if(!el) return;
+  const txCount = filtered.length;
+  const avgTx = txCount > 0 ? ing / filtered.filter(t=>t.tipo==='ingreso').length || 0 : 0;
+  const diasMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+  const diaHoy = new Date().getDate();
+  const ritmo = diaHoy > 0 ? (ing / diaHoy * diasMes) : 0;
+  const topGasto = filtered.filter(t=>t.tipo==='gasto').sort((a,b)=>b.monto-a.monto)[0];
+
+  const stat = (label, value, color='var(--ink)', sub='') => `
+    <div style="padding:0.65rem 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:0.67rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--ink-muted);font-weight:600;margin-bottom:0.2rem">${label}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:${color};letter-spacing:-0.02em">${value}</div>
+      ${sub?`<div style="font-size:0.7rem;color:var(--ink-muted);margin-top:0.1rem">${sub}</div>`:''}
+    </div>`;
+
+  let html = '';
+  html += stat('Margen neto', margen+'%',
+    parseFloat(margen)>=50?'var(--green)':parseFloat(margen)>=25?'var(--gold)':'var(--red)',
+    parseFloat(margen)>=50?'Excelente':'Por mejorar');
+
+  if(S.period==='mes' && diaHoy < diasMes) {
+    html += stat('Ritmo de ingresos', fmt(ritmo),
+      'var(--ink)', `Proyección al cierre del mes`);
+  }
+
+  if(topGasto) {
+    html += stat('Mayor gasto', fmt(topGasto.monto),
+      'var(--red)', topGasto.concepto);
+  }
+
+  html += stat('Movimientos', txCount.toString(), 'var(--ink)',
+    `${filtered.filter(t=>t.tipo==='ingreso').length} ingresos · ${filtered.filter(t=>t.tipo==='gasto').length} gastos`);
+
+  // Remove last border
+  el.innerHTML = html.replace(/border-bottom:1px solid var\(--border\)(?=[^"]*<\/div>\s*<\/div>\s*$)/, 'border-bottom:none');
+}
 
 function renderDashboard() {
   const biz = S.businesses.find(b=>b.id===S.activeBizId);
@@ -1650,6 +1704,7 @@ function renderDashboard() {
   renderTrend('kpiUtilTrend', util, prev.util);
   // Insights
   renderTop3(filtered);
+  renderQuickStats(filtered, ing, gas, util, margen);
   updateObjetivosBadge();
   renderCharts(filtered); renderRecent(filtered);
 }
@@ -1717,12 +1772,16 @@ function renderCharts(filtered) {
       options:{
         responsive:true, maintainAspectRatio:false,
         plugins:{
-          legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:10}},
-          tooltip:{callbacks:{label:(c)=>{const real=c.datasetIndex===0?wIng[c.dataIndex]:wGas[c.dataIndex]; return ` ${fmt(real)}`;}}}
+          legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:8,usePointStyle:true,pointStyleWidth:8,padding:16}},
+          tooltip:{
+            backgroundColor:'rgba(28,26,23,0.92)',
+            titleColor:'#fff', bodyColor:'rgba(255,255,255,0.8)',
+            padding:10, cornerRadius:8, displayColors:true,
+            callbacks:{label:(c)=>{const real=c.datasetIndex===0?wIng[c.dataIndex]:wGas[c.dataIndex]; return `  ${fmt(real)}`;}}}
         },
         scales:{
-          x:{grid:{display:false},ticks:{color:'#8a8270',font:{size:11}}},
-          y:{beginAtZero:true,suggestedMax:maxVal*1.15,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8a8270',font:{size:11},callback:v=>{if(v>=1000000)return '$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';return '$'+v;}}}
+          x:{grid:{display:false},border:{display:false},ticks:{color:'#8a8270',font:{size:11},padding:6}},
+          y:{beginAtZero:true,suggestedMax:maxVal*1.2,grid:{color:'rgba(0,0,0,0.035)',drawBorder:false},border:{display:false},ticks:{color:'#8a8270',font:{size:10},padding:8,callback:v=>{if(v>=1000000)return '$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';return v?'$'+v:''}}}
         }
       }
     });
@@ -1745,12 +1804,16 @@ function renderCharts(filtered) {
       options:{
         responsive:true, maintainAspectRatio:false,
         plugins:{
-          legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:10}},
-          tooltip:{callbacks:{label:(c)=>{const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex]; return ` ${fmt(real)}`;}}}
+          legend:{labels:{color:'#8a8270',font:{size:11},boxWidth:8,usePointStyle:true,pointStyleWidth:8,padding:16}},
+          tooltip:{
+            backgroundColor:'rgba(28,26,23,0.92)',
+            titleColor:'#fff', bodyColor:'rgba(255,255,255,0.8)',
+            padding:10, cornerRadius:8, displayColors:true,
+            callbacks:{label:(c)=>{const real=c.datasetIndex===0?months.map(m=>monthly[m].ing)[c.dataIndex]:months.map(m=>monthly[m].gas)[c.dataIndex]; return `  ${fmt(real)}`;}}}
         },
         scales:{
-          x:{grid:{display:false},ticks:{color:'#8a8270',font:{size:11}}},
-          y:{beginAtZero:true,suggestedMax:maxVal*1.15,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8a8270',font:{size:11},callback:v=>{if(v>=1000000)return '$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';return '$'+v;}}}
+          x:{grid:{display:false},border:{display:false},ticks:{color:'#8a8270',font:{size:11},padding:6}},
+          y:{beginAtZero:true,suggestedMax:maxVal*1.2,grid:{color:'rgba(0,0,0,0.035)',drawBorder:false},border:{display:false},ticks:{color:'#8a8270',font:{size:10},padding:8,callback:v=>{if(v>=1000000)return '$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return '$'+(v/1000).toFixed(0)+'k';return v?'$'+v:''}}}
         }
       }
     });
@@ -1783,17 +1846,23 @@ function renderCharts(filtered) {
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      cutout:'60%',
+      cutout:'66%',
       plugins:{
         legend:{
           position:'bottom',
-          labels:{color:'#8a8270',font:{size:10},padding:10,boxWidth:10,usePointStyle:true,pointStyleWidth:8}
+          labels:{color:'#8a8270',font:{size:10},padding:12,boxWidth:8,usePointStyle:true,pointStyleWidth:8}
         },
         tooltip:{
+          backgroundColor:'rgba(28,26,23,0.92)',
+          titleColor:'rgba(255,255,255,0)',
+          bodyColor:'rgba(255,255,255,0.9)',
+          padding:10, cornerRadius:8, displayColors:true,
           callbacks:{
+            title: ()=>'',
             label: c => {
               const pct = totalGasChart>0 ? ((c.raw/totalGasChart)*100).toFixed(1) : 0;
-              return `  ${fmt(c.raw)}  (${pct}%)`;
+              const label = CAT_LABELS[cats[c.dataIndex]] || cats[c.dataIndex];
+              return `  ${label}   ${fmt(c.raw)}  (${pct}%)`;
             }
           }
         }
