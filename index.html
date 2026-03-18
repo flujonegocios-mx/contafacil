@@ -2297,67 +2297,91 @@ function parseDate(val) {
   return null;
 }
 
-// ── AI CATEGORY CLASSIFIER ──────────────────────────────────────
+// ── CLASIFICADOR POR PALABRAS CLAVE (PyMEs mexicanas) ────────────
+function clasificarCategoria(concepto, tipo, catRaw) {
+  // Si ya viene una clave válida exacta, úsala directo
+  const KEYS = ['renta','nomina','marketing','mercancia','servicios_pub','transporte','ventas','servicios','otro'];
+  if(catRaw && KEYS.includes(catRaw.toLowerCase().trim())) return catRaw.toLowerCase().trim();
+
+  const txt = (concepto + ' ' + (catRaw||'')).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // quita acentos para comparar
+
+  // ── RENTA ──
+  const RENTA = ['renta','alquiler','arrend','local','oficina','bodega','nave industrial',
+    'inmueble','predio','mensualidad local','pago local','cuota local'];
+  if(RENTA.some(k=>txt.includes(k))) return 'renta';
+
+  // ── NÓMINA ──
+  const NOMINA = ['nomina','nomína','sueldo','salario','quincena','semana empleado',
+    'pago empleado','pago personal','pago trabajador','honorarios empleado',
+    'imss','infonavit','afore','liquidacion','finiquito','aguinaldo',
+    'reparto utilidades','prima vacacional','trabajador','colaborador','operador'];
+  if(NOMINA.some(k=>txt.includes(k))) return 'nomina';
+
+  // ── SERVICIOS PÚBLICOS ──
+  const SERV_PUB = ['cfe','luz','electricidad','energia electrica','recibo luz',
+    'agua','sapam','jumapaa','servicio municipal','predial','tenencia',
+    'telmex','telcel','att','movistar','izzi','totalplay','megacable','axtel',
+    'internet','telefono','celular','plan telefono','recibo telefono',
+    'gas natural','gas lp','gasera','zeta gas','gas del norte',
+    'servicio publico','servicio municipal','basura','recoleccion'];
+  if(SERV_PUB.some(k=>txt.includes(k))) return 'servicios_pub';
+
+  // ── TRANSPORTE ──
+  const TRANSPORTE = ['flete','envio','envios','mensajeria','paqueteria',
+    'fedex','dhl','estafeta','redpack','ups','sendex','tresguerras',
+    'gasolina','diesel','combustible','carga gasolina','tanque',
+    'transporte','repartidor','chofer','delivery','uber eats','rappi',
+    'pedidos ya','logistica','acarreo','mudanza','carga','viaje',
+    'peaje','caseta','autopista','taxis','traslado'];
+  if(TRANSPORTE.some(k=>txt.includes(k))) return 'transporte';
+
+  // ── MARKETING ──
+  const MARKETING = ['marketing','publicidad','anuncio','facebook ads','google ads',
+    'instagram','redes sociales','social media','flyer','volante','banner',
+    'imprenta','diseño','diseñador','logo','branding','fotografia','video',
+    'produccion audiovisual','influencer','promocion','descuento','cupon',
+    'campana','pauta','boost','patrocinado','relaciones publicas','pr ',
+    'agencia','contenido','community manager','seo'];
+  if(MARKETING.some(k=>txt.includes(k))) return 'marketing';
+
+  // ── MERCANCÍA ──
+  const MERCANCIA = ['mercancia','mercancias','inventario','insumo','insumos',
+    'materia prima','producto','productos','compra de','proveedor','mayoreo',
+    'bodega','stock','existencias','resurtido','pedido proveedor',
+    'costo de venta','costo producto','empaque','embalaje','envase',
+    'ingrediente','ingredientes','tortilla','carne','pollo','res','cerdo',
+    'verdura','fruta','lacteo','abarrotes','carniceria','pescado','mariscos',
+    'bebida','refresco','agua embotellada','cerveza','licor',
+    'material','materiales','refaccion','refacciones','consumible'];
+  if(MERCANCIA.some(k=>txt.includes(k))) return 'mercancia';
+
+  // ── SERVICIOS (profesionales) ──
+  const SERVICIOS_PROF = ['consultoria','consultor','honorarios','contador','contabilidad',
+    'abogado','notario','despacho','auditoria','asesoria','asesor',
+    'capacitacion','curso','taller','coaching','servicio de','mantenimiento',
+    'limpieza','vigilancia','seguridad','guardia','fumigacion','plomero',
+    'electricista','carpintero','pintor','remodelacion','instalacion',
+    'soporte tecnico','informatica','software','licencia','suscripcion',
+    'netflix','spotify','adobe','office','microsoft','google workspace',
+    'hosting','dominio','servidor','cloud','aws','dropbox'];
+  if(SERVICIOS_PROF.some(k=>txt.includes(k))) return 'servicios';
+
+  // ── VENTAS / INGRESOS ──
+  const VENTAS = ['venta','ventas','cobro','cobros','ingreso','ingresos',
+    'pago recibido','deposito cliente','transferencia cliente','abono cliente',
+    'factura cobrada','servicio cobrado','orden','pedido cobrado',
+    'mostrador','caja','efectivo recibido','liquidacion cliente',
+    'anticipo','anticipo cliente','saldo cliente'];
+  if(VENTAS.some(k=>txt.includes(k))) return 'ventas';
+
+  // ── FALLBACK por tipo ──
+  return tipo === 'ingreso' ? 'ventas' : 'otro';
+}
+
 async function clasificarCategorias(movimientos) {
-  // movimientos = [{concepto, tipo, catRaw}]
-  // Returns array of category keys in same order
-  const KEYS = 'renta, nomina, marketing, mercancia, servicios_pub, transporte, ventas, servicios, otro';
-  const lines = movimientos.map((m,i) =>
-    `${i+1}. concepto="${m.concepto}" tipo=${m.tipo}${m.catRaw?' categoria_original="'+m.catRaw+'"':''}`
-  ).join('\n');
-
-  const prompt = `Eres un clasificador de movimientos financieros para pequeñas empresas mexicanas.
-Clasifica cada movimiento en UNA de estas categorías exactas (usa solo estas claves):
-${KEYS}
-
-Reglas:
-- renta: alquiler de local, oficina, bodega, renta de inmueble
-- nomina: sueldos, salarios, honorarios a empleados, pago de personal
-- marketing: publicidad, redes sociales, diseño, promociones, imprenta
-- mercancia: compra de productos para vender, inventario, materia prima, insumos
-- servicios_pub: luz, agua, gas, teléfono, internet, CFE, TELMEX, servicios municipales
-- transporte: fletes, envíos, gasolina, repartidor, mensajería, logística
-- ventas: ingresos por ventas, cobros a clientes, servicios prestados (si tipo=ingreso)
-- servicios: servicios profesionales prestados o recibidos, consultoría, contabilidad
-- otro: cualquier cosa que no encaje claramente
-
-Movimientos:
-${lines}
-
-Responde SOLO con un JSON array con las claves en el mismo orden, ejemplo: ["renta","ventas","nomina"]
-Sin explicación, sin texto adicional, solo el JSON array.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text?.trim() || '[]';
-    const clean = text.replace(/```json|```/g,'').trim();
-    const result = JSON.parse(clean);
-    if(Array.isArray(result) && result.length === movimientos.length) return result;
-  } catch(e) {
-    console.warn('AI clasificación falló, usando fallback:', e.message);
-  }
-  // Fallback: rule-based
-  return movimientos.map(m => {
-    const t = (m.concepto + ' ' + (m.catRaw||'')).toLowerCase();
-    if(t.includes('renta')||t.includes('alquiler')||t.includes('arrend')) return 'renta';
-    if(t.includes('nomin')||t.includes('sueldo')||t.includes('salario')) return 'nomina';
-    if(t.includes('market')||t.includes('publici')||t.includes('promoc')) return 'marketing';
-    if(t.includes('mercan')||t.includes('inventar')||t.includes('compra de')) return 'mercancia';
-    if(t.includes('cfe')||t.includes('telmex')||t.includes('luz ')||t.includes('agua')||t.includes('internet')) return 'servicios_pub';
-    if(t.includes('transport')||t.includes('envio')||t.includes('flete')||t.includes('gasolina')) return 'transporte';
-    if(t.includes('venta')||t.includes('cobro')||t.includes('ingreso')) return 'ventas';
-    if(t.includes('servic')||t.includes('consult')||t.includes('honorar')) return m.tipo==='ingreso'?'servicios':'servicios_pub';
-    return m.tipo==='ingreso'?'ventas':'otro';
-  });
+  // Clasificación síncrona — sin IA, sin API, sin costo
+  return movimientos.map(m => clasificarCategoria(m.concepto, m.tipo, m.catRaw));
 }
 
 async function runImport() {
@@ -2403,7 +2427,7 @@ async function runImport() {
   }
 
   // Second pass: AI classify all in one call
-  btn.textContent = `Clasificando ${validRows.length} movimientos con IA...`;
+  btn.textContent = `Procesando ${validRows.length} movimientos...`;
   const categorias = await clasificarCategorias(validRows);
 
   btn.textContent = 'Guardando...';
