@@ -601,7 +601,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <div id="importStep1">
         <div class="card" style="max-width:600px">
           <div class="card-title" style="margin-bottom:0.5rem">Paso 1 — Sube tu archivo</div>
-          <div class="card-sub" style="margin-bottom:1.25rem">Acepta archivos .xlsx, .xls o .csv</div>
+          <div class="card-sub" style="margin-bottom:1.25rem">Acepta uno o varios archivos .xlsx, .xls o .csv a la vez</div>
           <div id="dropZone" onclick="document.getElementById('fileInput').click()" style="border:2px dashed var(--border);border-radius:10px;padding:2.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2)">
             <div style="margin-bottom:0.75rem;opacity:0.45">
   <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -610,9 +610,9 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     <path d="M16 36h16" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round" opacity=".4"/>
   </svg>
 </div>
-            <div style="font-weight:600;margin-bottom:0.3rem">Arrastra tu archivo aquí</div>
-            <div style="font-size:0.8rem;color:var(--ink-muted)">o haz clic para seleccionar</div>
-            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+            <div style="font-weight:600;margin-bottom:0.3rem">Arrastra uno o varios archivos aquí</div>
+            <div style="font-size:0.8rem;color:var(--ink-muted)">o haz clic para seleccionar (puedes elegir varios)</div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" multiple onchange="handleFiles(this.files)">
           </div>
           <p style="font-size:0.75rem;color:var(--ink-muted);margin-top:0.75rem;text-align:center">Tu archivo no se sube a ningún servidor — todo se procesa en tu navegador</p>
         </div>
@@ -1316,11 +1316,31 @@ function renderBizList() {
 // Transactions
 async function loadTransactions() {
   if (!S.activeBizId) return;
-  const { data } = await sb.from('transactions').select('*').eq('business_id', S.activeBizId).order('fecha', { ascending:false });
-  // Normalize categoria to lowercase so "Renta" === "renta" === "RENTA"
-  S.transactions = (data || []).map(t => ({
+
+  // Supabase default limit is 1000 — paginate to get ALL rows
+  const PAGE = 1000;
+  let all = [];
+  let from = 0;
+  let keepGoing = true;
+
+  while (keepGoing) {
+    const { data, error } = await sb
+      .from('transactions')
+      .select('*')
+      .eq('business_id', S.activeBizId)
+      .order('fecha', { ascending: false })
+      .range(from, from + PAGE - 1);
+
+    if (error || !data) break;
+    all = all.concat(data);
+    if (data.length < PAGE) keepGoing = false;
+    else from += PAGE;
+  }
+
+  // Normalize categoria to lowercase
+  S.transactions = all.map(t => ({
     ...t,
-    categoria: (t.categoria||'otro').toLowerCase().trim()
+    categoria: (t.categoria || 'otro').toLowerCase().trim()
   }));
 }
 
@@ -1976,6 +1996,7 @@ function goToHistorial() {
 }
 
 function togglePlMes(ym) {
+  S.plMeses.delete('__all__'); // clear "todo historial" if active
   if (S.plMeses.has(ym)) S.plMeses.delete(ym);
   else S.plMeses.add(ym);
   renderPL();
@@ -2028,11 +2049,19 @@ function renderPL() {
   const monthSet = new Set(S.transactions.map(t => t.fecha.substring(0,7)));
   const allMonths = [...monthSet].sort().reverse();
 
+  // Check if there are months from previous years
+  const hasOtherYears = allMonths.some(m => !m.startsWith(thisYear));
+
+  // Three states: YTD (default), ALL (todo historial), or specific months selected
+  const isAll = S.plMeses.size === 1 && [...S.plMeses][0] === '__all__';
   const isYTD = S.plMeses.size === 0;
+  const isCustom = !isYTD && !isAll;
 
   // Current period months list
   let curMonths;
-  if (isYTD) {
+  if (isAll) {
+    curMonths = [...allMonths].sort(); // all months
+  } else if (isYTD) {
     curMonths = allMonths.filter(m => m.startsWith(thisYear));
   } else {
     curMonths = [...S.plMeses].sort();
@@ -2041,12 +2070,12 @@ function renderPL() {
   // Previous comparison period months
   const prevMonths = getPrevPeriodMonths(curMonths);
   const prevSet = new Set(prevMonths);
-  const hasPrevData = S.transactions.some(t => prevSet.has(t.fecha.substring(0,7)));
+  const hasPrevData = !isAll && S.transactions.some(t => prevSet.has(t.fecha.substring(0,7)));
 
   // Update comparison header label
   const hdr = document.getElementById('plCmpHeader');
   if (hdr) {
-    if (!hasPrevData) {
+    if (!hasPrevData || isAll) {
       hdr.textContent = '';
     } else if (isYTD) {
       hdr.textContent = `vs ene–${now.toLocaleDateString('es-MX',{month:'short'})} ${now.getFullYear()-1}`;
@@ -2062,19 +2091,22 @@ function renderPL() {
   pillsContainer.innerHTML = `
     <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">
       <div class="month-pill ${isYTD ? 'active' : ''}" onclick="S.plMeses=new Set();renderPL()">Lo que va del año</div>
+      ${hasOtherYears ? `<div class="month-pill ${isAll ? 'active' : ''}" onclick="S.plMeses=new Set(['__all__']);renderPL()">Todo el historial</div>` : ''}
       <div style="width:1px;height:18px;background:var(--border);margin:0 0.1rem;flex-shrink:0"></div>
-      ${allMonths.map(m => `<div class="month-pill ${S.plMeses.has(m)?'active':''}" onclick="togglePlMes('${m}')">${fmtMonthLabel(m)}</div>`).join('')}
+      ${allMonths.map(m => `<div class="month-pill ${(isCustom && S.plMeses.has(m))?'active':''}" onclick="togglePlMes('${m}')">${fmtMonthLabel(m)}</div>`).join('')}
     </div>`;
 
   // Filtered transactions
   const curSet = new Set(curMonths);
-  const filtered = S.transactions.filter(t => curSet.has(t.fecha.substring(0,7)));
+  const filtered = isAll ? [...S.transactions] : S.transactions.filter(t => curSet.has(t.fecha.substring(0,7)));
   const prevFiltered = S.transactions.filter(t => prevSet.has(t.fecha.substring(0,7)));
 
   // Update subtitle
   const subtitle = document.getElementById('plSubtitle');
   if (subtitle) {
-    if (isYTD) {
+    if (isAll) {
+      subtitle.textContent = `Todo el historial — ${allMonths[allMonths.length-1] ? fmtMonthLabel(allMonths[allMonths.length-1]) : ''} a ${fmtMonthLabel(allMonths[0])}`;
+    } else if (isYTD) {
       subtitle.textContent = `Enero – ${now.toLocaleDateString('es-MX',{month:'long'})} ${thisYear}`;
     } else if (S.plMeses.size === 1) {
       const [ym] = S.plMeses;
@@ -2261,10 +2293,28 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!dz) return;
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--accent)'; dz.style.background = 'var(--green-bg)'; });
   dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--surface2)'; });
-  dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--surface2)'; handleFile(e.dataTransfer.files[0]); });
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--surface2)'; handleFiles(e.dataTransfer.files); });
 });
 
-function handleFile(file) {
+// Queue for multiple files
+let _fileQueue = [];
+let _fileQueueNames = [];
+
+function handleFiles(files) {
+  if (!files || files.length === 0) return;
+  _fileQueue = Array.from(files);
+  _fileQueueNames = _fileQueue.map(f => f.name);
+
+  if (_fileQueue.length === 1) {
+    // Single file — normal flow with column mapping
+    handleFileSingle(_fileQueue[0]);
+  } else {
+    // Multiple files — show confirmation panel, import all with auto-mapping
+    showMultiFilePanel();
+  }
+}
+
+function handleFileSingle(file) {
   if (!file) return;
   loadSheetJS(() => {
     const reader = new FileReader();
@@ -2273,19 +2323,16 @@ function handleFile(file) {
         const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
-        if (data.length < 2) return showToast('El archivo está vacío', 'err');
+        if (data.length < 2) return showToast('El archivo esta vacio', 'err');
 
-        // Find the actual header row — look for a row with 3+ non-empty cells
-        // that doesn't look like a title (titles are usually merged/single cell)
         let headerRowIdx = 0;
         for (let i = 0; i < Math.min(10, data.length); i++) {
           const nonEmpty = data[i].filter(c => c !== '' && c !== null && c !== undefined).length;
           if (nonEmpty >= 3) { headerRowIdx = i; break; }
         }
 
-        importColumns = data[headerRowIdx].map((h, i) => String(h||'').trim() || `Columna ${i+1}`);
-        // Only keep rows after header that have at least 2 non-empty cells
-        importedRows = data.slice(headerRowIdx + 1).filter(r => 
+        importColumns = data[headerRowIdx].map((h, i) => String(h||'').trim() || 'Columna '+(i+1));
+        importedRows = data.slice(headerRowIdx + 1).filter(r =>
           r.filter(c => c !== '' && c !== null && c !== undefined).length >= 2
         );
 
@@ -2301,6 +2348,167 @@ function handleFile(file) {
     };
     reader.readAsArrayBuffer(file);
   });
+}
+
+function showMultiFilePanel() {
+  document.getElementById('importStep1').style.display = 'none';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('importStep3').style.display = 'none';
+  let panel = document.getElementById('importMultiPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'importMultiPanel';
+    document.getElementById('importStep1').parentNode.appendChild(panel);
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="card" style="max-width:600px">'
+    + '<div class="card-title" style="margin-bottom:0.25rem">Importar varios archivos</div>'
+    + '<div class="card-sub" style="margin-bottom:1.25rem">Se detectaron ' + _fileQueue.length + ' archivos. Se importaran automaticamente usando las columnas estandar (Fecha, Concepto, Monto, Tipo, Categoria).</div>'
+    + '<div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.25rem">'
+    + _fileQueueNames.map((n,i) => '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;background:var(--surface2);border-radius:7px;font-size:0.83rem">'
+        + '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="var(--accent)" stroke-width="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round"/></svg>'
+        + '<span style="flex:1">' + n + '</span>'
+        + '<span id="fileStatus_' + i + '" style="font-size:0.75rem;color:var(--ink-muted)">En espera</span>'
+      + '</div>'
+    ).join('')
+    + '</div>'
+    + '<div id="multiProgress" style="display:none;margin-bottom:1rem">'
+      + '<div style="background:var(--surface2);border-radius:99px;height:6px;overflow:hidden">'
+        + '<div id="multiProgressBar" style="height:6px;border-radius:99px;background:var(--accent);transition:width .4s ease;width:0%"></div>'
+      + '</div>'
+      + '<div id="multiProgressLabel" style="font-size:0.75rem;color:var(--ink-muted);margin-top:0.4rem;text-align:center"></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:0.75rem">'
+      + '<button class="btn-outline" onclick="resetImport()">Cancelar</button>'
+      + '<button class="btn-submit" style="margin-top:0;flex:1" id="btnMultiImport" onclick="runMultiImport()">Importar todos →</button>'
+    + '</div>'
+  + '</div>';
+}
+
+async function parseFileToRows(file) {
+  return new Promise((resolve, reject) => {
+    loadSheetJS(() => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+          if (data.length < 2) return resolve({ rows: [], columns: [], filename: file.name });
+
+          let headerRowIdx = 0;
+          for (let i = 0; i < Math.min(10, data.length); i++) {
+            const nonEmpty = data[i].filter(c => c !== '' && c !== null && c !== undefined).length;
+            if (nonEmpty >= 3) { headerRowIdx = i; break; }
+          }
+          const columns = data[headerRowIdx].map((h, i) => String(h||'').trim().toLowerCase() || 'col'+i);
+          const rows = data.slice(headerRowIdx + 1).filter(r =>
+            r.filter(c => c !== '' && c !== null && c !== undefined).length >= 2
+          );
+          resolve({ rows, columns, filename: file.name });
+        } catch(err) { reject(err); }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  });
+}
+
+async function runMultiImport() {
+  if (!S.activeBizId) return showToast('Selecciona un negocio primero', 'err');
+  if (noInternet()) return showToast('Sin conexion a internet', 'err');
+
+  const btn = document.getElementById('btnMultiImport');
+  btn.disabled = true; btn.textContent = 'Importando...';
+  document.getElementById('multiProgress').style.display = 'block';
+
+  let totalOk = 0, totalSkip = 0;
+
+  for (let fi = 0; fi < _fileQueue.length; fi++) {
+    const file = _fileQueue[fi];
+    const statusEl = document.getElementById('fileStatus_' + fi);
+    if(statusEl) { statusEl.textContent = 'Procesando...'; statusEl.style.color = 'var(--gold)'; }
+
+    const pct = Math.round((fi / _fileQueue.length) * 100);
+    document.getElementById('multiProgressBar').style.width = pct + '%';
+    document.getElementById('multiProgressLabel').textContent = 'Archivo ' + (fi+1) + ' de ' + _fileQueue.length + ': ' + file.name;
+
+    try {
+      const { rows, columns, filename } = await parseFileToRows(file);
+      if (!rows.length) {
+        if(statusEl) { statusEl.textContent = 'Sin datos'; statusEl.style.color = 'var(--ink-muted)'; }
+        continue;
+      }
+
+      // Auto-detect column indices by header name
+      const findCol = (...names) => {
+        for (const name of names) {
+          const idx = columns.findIndex(c => c.includes(name));
+          if (idx >= 0) return idx;
+        }
+        return -1;
+      };
+      const fechaIdx   = findCol('fecha', 'date', 'dia', 'día');
+      const conceptoIdx = findCol('concepto', 'descripcion', 'descripción', 'detail', 'nombre');
+      const montoIdx   = findCol('monto', 'amount', 'importe', 'valor', 'total');
+      const tipoIdx    = findCol('tipo', 'type', 'movimiento');
+      const catIdx     = findCol('categoria', 'categoría', 'category', 'rubro');
+
+      if (fechaIdx < 0 || conceptoIdx < 0 || montoIdx < 0) {
+        if(statusEl) { statusEl.textContent = 'Sin columnas detectadas'; statusEl.style.color = 'var(--red)'; }
+        totalSkip += rows.length;
+        continue;
+      }
+
+      const validRows = [];
+      for (const row of rows) {
+        const fecha    = parseDate(String(row[fechaIdx]||''));
+        const concepto = String(row[conceptoIdx]||'').trim();
+        const monto    = parseFloat(String(row[montoIdx]).replace(/[,$\s]/g,''));
+        if (!fecha || !concepto || isNaN(monto) || monto <= 0) { totalSkip++; continue; }
+        let tipo = 'ingreso';
+        if (tipoIdx >= 0 && row[tipoIdx]) {
+          const t = String(row[tipoIdx]).toLowerCase();
+          if (t.includes('gasto') || t.includes('egreso') || t.includes('expense')) tipo = 'gasto';
+          else if (t.includes('ingreso') || t.includes('venta') || t.includes('income')) tipo = 'ingreso';
+        } else {
+          tipo = monto < 0 ? 'gasto' : 'ingreso';
+        }
+        const catRaw = catIdx >= 0 ? String(row[catIdx]||'').toLowerCase().trim() : '';
+        const categoria = clasificarCategoria(concepto, tipo, catRaw);
+        validRows.push({ business_id: S.activeBizId, user_id: S.user.id, tipo, concepto, monto: Math.abs(monto), categoria, fecha });
+      }
+
+      if (validRows.length > 0) {
+        const { data: importRecord } = await sb.from('imports')
+          .insert({ user_id: S.user.id, business_id: S.activeBizId, filename, record_count: validRows.length })
+          .select().single();
+        if (importRecord) validRows.forEach(t => t.import_id = importRecord.id);
+
+        for (let i = 0; i < validRows.length; i += 500) {
+          await sb.from('transactions').insert(validRows.slice(i, i+500));
+        }
+        totalOk += validRows.length;
+        if(statusEl) { statusEl.textContent = validRows.length + ' importados'; statusEl.style.color = 'var(--green)'; }
+      }
+    } catch(err) {
+      if(statusEl) { statusEl.textContent = 'Error'; statusEl.style.color = 'var(--red)'; }
+    }
+  }
+
+  document.getElementById('multiProgressBar').style.width = '100%';
+  document.getElementById('multiProgressLabel').textContent = 'Completado';
+
+  await loadTransactions();
+  renderDashboard();
+  showToast(totalOk + ' movimientos importados de ' + _fileQueue.length + ' archivos', 'ok');
+
+  setTimeout(() => {
+    const panel = document.getElementById('importMultiPanel');
+    if(panel) panel.style.display = 'none';
+    document.getElementById('importStep1').style.display = 'block';
+    _fileQueue = []; _fileQueueNames = [];
+    document.getElementById('fileInput').value = '';
+  }, 3000);
 }
 
 const IMPORT_FIELDS = [
@@ -2554,22 +2762,33 @@ async function runImport() {
       .select().single();
 
     if (!impErr && importRecord) {
-      // 2. Tag all transactions with import_id
       batch.forEach(t => t.import_id = importRecord.id);
     }
 
-    // 3. Insert in chunks of 100
+    // 2. Insert in chunks of 500 with progress feedback
+    const CHUNK = 500;
+    const totalChunks = Math.ceil(batch.length / CHUNK);
     let insertErr = false;
-    for (let i = 0; i < batch.length; i += 100) {
+
+    for (let i = 0; i < batch.length; i += CHUNK) {
+      const chunkNum = Math.floor(i / CHUNK) + 1;
+      const pct = Math.round((i / batch.length) * 100);
+      btn.textContent = `Guardando... ${pct}% (${i.toLocaleString()} de ${batch.length.toLocaleString()})`;
       try {
-        const { error: insErr } = await withTimeout(sb.from('transactions').insert(batch.slice(i, i+100)), 15000);
+        const { error: insErr } = await withTimeout(
+          sb.from('transactions').insert(batch.slice(i, i + CHUNK)),
+          30000 // 30s timeout per chunk for large files
+        );
         if (insErr) { insertErr = true; break; }
       } catch(e) { insertErr = true; break; }
     }
+
     if (insertErr) {
       btn.disabled = false; btn.textContent = 'Importar movimientos';
       return showToast('Error al guardar los registros. Revisa tu conexión e intenta de nuevo.', 'err');
     }
+
+    btn.textContent = 'Cargando datos...';
     await loadTransactions();
   }
 
@@ -2582,11 +2801,12 @@ async function runImport() {
 }
 
 function resetImport() {
-  importedRows = []; importColumns = [];
-  document.getElementById('fileInput').value = '';
+  importedRows = []; importColumns = []; _fileQueue = []; _fileQueueNames = [];
+  const fi = document.getElementById('fileInput'); if(fi) fi.value = '';
   document.getElementById('importStep1').style.display = 'block';
   document.getElementById('importStep2').style.display = 'none';
   document.getElementById('importStep3').style.display = 'none';
+  const mp = document.getElementById('importMultiPanel'); if(mp) mp.style.display = 'none';
 }
 
 function goToDashboard() {
