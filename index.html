@@ -1140,14 +1140,39 @@ const PALETTE = ['#2d6a4f','#e76f51','#264653','#e9c46a','#457b9d','#6d6875','#f
 const CAT_LABELS = { mercancia:'Mercancía', renta:'Renta', nomina:'Nómina', servicios_pub:'Servicios públicos', marketing:'Marketing', transporte:'Transporte', otro:'Otro', ventas:'Ventas', servicios:'Servicios' };
 
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  document.getElementById('loadingScreen').style.display = 'none';
-  if (session?.user) {
-    S.user = session.user;
-    await checkAccessAndEnter();
-  } else {
+  // Keep loading screen visible while we confirm the session
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      S.user = session.user;
+      await checkAccessAndEnter();
+    } else {
+      // No session — show login
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('authScreen').classList.add('show');
+    }
+  } catch(e) {
+    // On error, show login so user isn't stuck on loading screen
+    document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('authScreen').classList.add('show');
   }
+
+  // Also listen for auth state changes (handles token refresh, tab switching)
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user && !S.user) {
+      S.user = session.user;
+      await checkAccessAndEnter();
+    }
+    if (event === 'SIGNED_OUT') {
+      S = { user:null, businesses:[], transactions:[], activeBizId:null, period:'mes', plMonth:null, plMeses:new Set() };
+      document.getElementById('appScreen').classList.remove('show');
+      document.getElementById('blockedScreen').classList.remove('show');
+      document.getElementById('authScreen').classList.add('show');
+    }
+    if (event === 'TOKEN_REFRESHED' && session?.user && S.user) {
+      S.user = session.user; // keep user token fresh
+    }
+  });
 }
 
 // ── ERROR HANDLING HELPERS ──────────────────────────────────────
@@ -1219,6 +1244,8 @@ async function checkAccessAndEnter() {
   // Verificar si la cuenta está activa
   const { data: profile } = await sb.from('profiles').select('is_active, name').eq('id', S.user.id).single();
 
+  // Hide loading screen NOW — after we have session confirmation
+  document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('authScreen').classList.remove('show');
 
   if (profile && profile.is_active === false) {
@@ -1254,10 +1281,18 @@ async function doLogout() {
 
 // Businesses
 async function loadBusinesses() {
-  const { data } = await sb.from('businesses').select('*').order('created_at');
+  if (!S.user?.id) return;
+  // Always filter by user_id — never show another user's businesses
+  const { data } = await sb.from('businesses').select('*')
+    .eq('user_id', S.user.id)
+    .order('created_at');
   S.businesses = data || [];
-  if (S.businesses.length > 0) { S.activeBizId = S.businesses[0].id; await loadTransactions(); }
-  renderBizList(); renderDashboard();
+  if (S.businesses.length > 0) {
+    S.activeBizId = S.businesses[0].id;
+    await loadTransactions();
+  }
+  renderBizList();
+  renderDashboard();
 }
 
 function openTxModal() {
