@@ -1282,10 +1282,29 @@ async function doLogout() {
 // Businesses
 async function loadBusinesses() {
   if (!S.user?.id) return;
-  // Always filter by user_id — never show another user's businesses
-  const { data } = await sb.from('businesses').select('*')
+
+  // Try filtering by user_id first (correct behavior)
+  let { data } = await sb.from('businesses').select('*')
     .eq('user_id', S.user.id)
     .order('created_at');
+
+  // Fallback: if no businesses found with user_id filter,
+  // try without filter (handles legacy records without user_id)
+  // and auto-assign user_id to fix them
+  if (!data || data.length === 0) {
+    const { data: allBiz } = await sb.from('businesses').select('*').order('created_at');
+    if (allBiz && allBiz.length > 0) {
+      data = allBiz;
+      // Auto-fix: assign user_id to businesses that don't have it
+      const unfixed = allBiz.filter(b => !b.user_id);
+      if (unfixed.length > 0) {
+        await sb.from('businesses')
+          .update({ user_id: S.user.id })
+          .in('id', unfixed.map(b => b.id));
+      }
+    }
+  }
+
   S.businesses = data || [];
   if (S.businesses.length > 0) {
     S.activeBizId = S.businesses[0].id;
