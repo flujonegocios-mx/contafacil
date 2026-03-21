@@ -1338,7 +1338,7 @@ async function createBiz() {
   }
 }
 
-async function selectBiz(id) { S.activeBizId = id; await loadTransactions(); renderBizList(); renderDashboard(); }
+async function selectBiz(id) { S.activeBizId = id; _loadedAll = false; S.transactions = []; await loadTransactions(false); renderBizList(); renderDashboard(); }
 
 function renderBizList() {
   const COLORS = ['#2d6a4f','#e76f51','#264653','#e9c46a','#457b9d'];
@@ -1357,34 +1357,181 @@ function renderBizList() {
 }
 
 // Transactions
-async function loadTransactions() {
+// ── CACHÉ LOCAL ─────────────────────────────────────────────────
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+function cacheKey(bizId) {
+  return 'cf_txcache_' + bizId;
+}
+
+function saveCache(bizId, transactions) {
+  try {
+    localStorage.setItem(cacheKey(bizId), JSON.stringify({
+      ts: Date.now(),
+      data: transactions
+    }));
+  } catch(e) {
+    // localStorage lleno — no pasa nada, solo no cachea
+  }
+}
+
+function loadCache(bizId) {
+  try {
+    const raw = localStorage.getItem(cacheKey(bizId));
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null; // expirado
+    return data;
+  } catch(e) { return null; }
+}
+
+function clearCache(bizId) {
+  try { localStorage.removeItem(cacheKey(bizId)); } catch(e) {}
+}
+
+// ── CARGA LAZY POR PERÍODO ───────────────────────────────────────
+// Carga solo los meses necesarios según el período activo
+// S.transactions contiene solo los datos cargados hasta ahora
+// _loadedRange rastrea qué rango de fechas ya está en memoria
+
+let _loadedBizId = null;
+let _loadedAll = false; // true = ya se cargó todo el historial
+
+function getPeriodDateRange() {
+  const now = new Date();
+  const yr = now.getFullYear();
+  const mo = now.getMonth();
+
+  if (S.period === 'mes') {
+    return {
+      from: `${yr}-${String(mo+1).padStart(2,'0')}-01`,
+      to:   `${yr}-${String(mo+1).padStart(2,'0')}-31`
+    };
+  }
+  if (S.period === 'trim') {
+    const q = Math.floor(mo / 3);
+    const startMo = q * 3 + 1;
+    const endMo = startMo + 2;
+    return {
+      from: `${yr}-${String(startMo).padStart(2,'0')}-01`,
+      to:   `${yr}-${String(endMo).padStart(2,'0')}-31`
+    };
+  }
+  // año
+  return { from: `${yr}-01-01`, to: `${yr}-12-31` };
+}
+
+async function loadTransactions(forceAll = false) {
   if (!S.activeBizId) return;
 
-  // Supabase default limit is 1000 — paginate to get ALL rows
-  const PAGE = 1000;
-  let all = [];
-  let from = 0;
-  let keepGoing = true;
+  // Si cambiamos de negocio, limpiar estado
+  if (_loadedBizId !== S.activeBizId) {
+    S.transactions = [];
+    _loadedAll = false;
+    _loadedBizId = S.activeBizId;
+  }
 
-  while (keepGoing) {
-    const { data, error } = await sb
-      .from('transactions')
+  // Si ya cargamos todo, no volver a cargar
+  if (_loadedAll && !forceAll) return;
+
+  // Intentar caché primero (solo para carga completa)
+  if (forceAll) {
+    const cached = loadCache(S.activeBizId);
+    if (cached) {
+      S.transactions = cached;
+      _loadedAll = true;
+      return;
+    }
+  }
+
+  const PAGE = 1000;
+  const MAX_RETRIES = 3;
+
+  // Construir query base
+  const buildQuery = (from, to, rangeFrom, rangeTo) => {
+    let q = sb.from('transactions')
       .select('*')
       .eq('business_id', S.activeBizId)
       .order('fecha', { ascending: false })
-      .range(from, from + PAGE - 1);
+      .range(rangeFrom, rangeTo);
+    if (from) q = q.gte('fecha', from);
+    if (to)   q = q.lte('fecha', to);
+    return q;
+  };
 
-    if (error || !data) break;
-    all = all.concat(data);
-    if (data.length < PAGE) keepGoing = false;
-    else from += PAGE;
+  // Determinar rango de fechas a cargar
+  let dateFrom, dateTo;
+  if (!forceAll) {
+    const range = getPeriodDateRange();
+    dateFrom = range.from;
+    dateTo = range.to;
   }
 
-  // Normalize categoria to lowercase
-  S.transactions = all.map(t => ({
+  // Obtener count del rango
+  let countQuery = sb.from('transactions')
+    .select('*', { count: 'exact', head: true })
+    .eq('business_id', S.activeBizId);
+  if (dateFrom) countQuery = countQuery.gte('fecha', dateFrom).lte('fecha', dateTo);
+
+  const { count } = await countQuery;
+  if (!count) {
+    if (!forceAll) {
+      // Sin datos en este período — marcar y no sobrescribir datos previos
+    } else {
+      S.transactions = [];
+      _loadedAll = true;
+    }
+    return;
+  }
+
+  // Páginas en paralelo con reintentos
+  const pages = [];
+  for (let from = 0; from < count; from += PAGE) pages.push(from);
+
+  const results = await Promise.all(pages.map(async (rangeFrom) => {
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      let q = sb.from('transactions')
+        .select('*')
+        .eq('business_id', S.activeBizId)
+        .order('fecha', { ascending: false })
+        .range(rangeFrom, rangeFrom + PAGE - 1);
+      if (dateFrom) q = q.gte('fecha', dateFrom).lte('fecha', dateTo);
+
+      const { data, error } = await q;
+      if (!error && data) return data;
+      if (attempt < MAX_RETRIES - 1)
+        await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+    }
+    return [];
+  }));
+
+  const fetched = results.flat().map(t => ({
     ...t,
     categoria: (t.categoria || 'otro').toLowerCase().trim()
   }));
+
+  if (forceAll) {
+    // Reemplazar todo y cachear
+    S.transactions = fetched;
+    _loadedAll = true;
+    saveCache(S.activeBizId, fetched);
+  } else {
+    // Merge: combinar con datos existentes sin duplicados
+    const existingIds = new Set(S.transactions.map(t => t.id));
+    const newTxs = fetched.filter(t => !existingIds.has(t.id));
+    S.transactions = [...S.transactions, ...newTxs];
+    // Ordenar por fecha descendente
+    S.transactions.sort((a, b) => b.fecha.localeCompare(a.fecha));
+  }
+}
+
+// Cargar todo el historial cuando el usuario lo pide explícitamente
+async function loadAllTransactions() {
+  if (_loadedAll) return; // ya está todo cargado
+  showToast('Cargando historial completo...', '');
+  await loadTransactions(true);
+  renderDashboard();
+  showToast('Historial completo cargado', 'ok');
 }
 
 function setTxType(type) {
@@ -1418,6 +1565,7 @@ async function addTransaction() {
     btn.disabled=false; btn.textContent='Guardar movimiento';
     if (error) return showToast(txErrMsg(error), 'err');
     S.transactions.unshift(data);
+    clearCache(S.activeBizId); // invalidar caché — hay datos nuevos
     document.getElementById('txConcepto').value='';
     document.getElementById('txMonto').value='';
     closeTxModal();
@@ -1435,6 +1583,7 @@ async function deleteTransaction(id) {
     const { error } = await withTimeout(sb.from('transactions').delete().eq('id', id));
     if (error) return showToast('No se pudo eliminar. Intenta de nuevo.', 'err');
     S.transactions = S.transactions.filter(t => t.id!==id);
+    clearCache(S.activeBizId); // invalidar caché — hay datos eliminados
     renderDashboard();
     if (document.getElementById('page-historial').classList.contains('active')) renderHistorial();
     showToast('Movimiento eliminado');
@@ -1454,7 +1603,17 @@ function getFiltered() {
   });
 }
 
-function setPeriod(p,btn) { S.period=p; document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderDashboard(); }
+function setPeriod(p,btn) {
+  S.period=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Load data for the new period if not already loaded
+  if (!_loadedAll) {
+    loadTransactions(false).then(() => renderDashboard());
+  } else {
+    renderDashboard();
+  }
+}
 
 function fmt(n) { return '$'+Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtDate(d) { return new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'}); }
@@ -2306,8 +2465,15 @@ function showPage(page,btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active'); btn.classList.add('active');
-  if(page==='pl'){S.plMeses=new Set();renderPL();}
-  if(page==='historial'){renderHistorial();loadImports();}
+  if(page==='pl'){
+    S.plMeses=new Set();
+    if(!_loadedAll) loadAllTransactions().then(()=>renderPL());
+    else renderPL();
+  }
+  if(page==='historial'){
+    if(!_loadedAll) loadAllTransactions().then(()=>{renderHistorial();loadImports();});
+    else { renderHistorial(); loadImports(); }
+  }
   if(page==='reporte')initReportePage();
   if(page==='objetivos')renderObjetivosPage();
   if(page==='exportar')updateExportPreview();
@@ -2832,7 +2998,8 @@ async function runImport() {
     }
 
     btn.textContent = 'Cargando datos...';
-    await loadTransactions();
+    clearCache(S.activeBizId); _loadedAll = false;
+    await loadTransactions(true);
   }
 
   btn.disabled = false;
