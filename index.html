@@ -319,6 +319,11 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
       <label>Contraseña</label>
       <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
+    <div style="display:flex;align-items:flex-start;gap:0.6rem;margin-top:1rem;margin-bottom:0.25rem">
+      <input type="checkbox" id="legalCheck" style="margin-top:3px;width:15px;height:15px;flex-shrink:0;accent-color:var(--accent);cursor:pointer">
+      <label for="legalCheck" style="font-size:0.76rem;color:var(--ink-muted);line-height:1.5;cursor:pointer">He leído y acepto los <button type="button" onclick="openLegalModal('terminos')" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.76rem;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px">Términos y Condiciones</button> y el <button type="button" onclick="openLegalModal('privacidad')" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.76rem;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px">Aviso de Privacidad</button></label>
+    </div>
+    <div id="legalMsg" style="display:none;font-size:0.76rem;color:var(--red);margin-bottom:0.4rem;padding:0 0.1rem">Debes aceptar los Términos y el Aviso de Privacidad para continuar.</div>
     <button class="btn-primary" id="btnLogin" onclick="doLogin()">Entrar →</button>
     <div style="text-align:center;margin-top:1rem">
       <button onclick="showForgotView()" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.8rem;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px">¿Olvidaste tu contraseña?</button>
@@ -415,7 +420,7 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
     <div>
       <div class="sidebar-section-title">Negocios</div>
       <div id="bizList"></div>
-      <button class="btn-new-biz" onclick="openBizModal()">+ Nuevo negocio</button>
+      <div id="bizActions"></div>
     </div>
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="openCambiarPassModal()" style="color:rgba(255,255,255,0.35)">
@@ -426,6 +431,11 @@ body { font-family:'Instrument Sans',sans-serif; background:var(--bg); color:var
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="opacity:.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Cerrar sesión
       </button>
+      <div style="padding:0.4rem 0.75rem;display:flex;gap:0.6rem">
+        <button type="button" onclick="openLegalModal('privacidad')" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.63rem;color:rgba(255,255,255,0.18);cursor:pointer;padding:0;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,0.45)'" onmouseout="this.style.color='rgba(255,255,255,0.18)'">Privacidad</button>
+        <span style="font-size:0.63rem;color:rgba(255,255,255,0.1)">·</span>
+        <button type="button" onclick="openLegalModal('terminos')" style="background:none;border:none;font-family:'Instrument Sans',sans-serif;font-size:0.63rem;color:rgba(255,255,255,0.18);cursor:pointer;padding:0;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,0.45)'" onmouseout="this.style.color='rgba(255,255,255,0.18)'">Términos</button>
+      </div>
     </div>
   </aside>
 
@@ -1225,6 +1235,14 @@ async function doLogin() {
   const pass = document.getElementById('loginPass').value;
   if (!email) return showAuthMsg('Ingresa tu correo electrónico.');
   if (!pass) return showAuthMsg('Ingresa tu contraseña.');
+  // Verificar aceptación legal
+  const legalCheck = document.getElementById('legalCheck');
+  const legalMsg = document.getElementById('legalMsg');
+  if (legalCheck && !legalCheck.checked) {
+    legalMsg.style.display = 'block';
+    return;
+  }
+  if (legalMsg) legalMsg.style.display = 'none';
   if (noInternet()) return showAuthMsg('Sin conexión a internet. Revisa tu red e intenta de nuevo.');
   const btn = document.getElementById('btnLogin');
   btn.disabled = true; btn.textContent = 'Entrando...';
@@ -1340,20 +1358,161 @@ async function createBiz() {
 
 async function selectBiz(id) { S.activeBizId = id; _loadedAll = false; S.transactions = []; await loadTransactions(false); renderBizList(); renderDashboard(); }
 
+// ── LEGAL MODAL ─────────────────────────────────────────────────
+function openLegalModal(doc) {
+  let existing = document.getElementById('legalModal');
+  if (!existing) {
+    existing = document.createElement('div');
+    existing.id = 'legalModal';
+    existing.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+    existing.onclick = function(e) { if(e.target===this) closeLegalModal(); };
+    document.body.appendChild(existing);
+  }
+  existing.innerHTML = '<div style="background:var(--surface);border-radius:16px;width:100%;max-width:620px;max-height:85vh;display:flex;flex-direction:column;animation:scaleIn 0.2s ease">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0">'
+      + '<div style="font-family:\'Syne\',sans-serif;font-size:0.95rem;font-weight:700" id="legalModalTitle"></div>'
+      + '<button onclick="closeLegalModal()" style="background:none;border:none;font-size:1.2rem;color:var(--ink-muted);cursor:pointer;line-height:1;padding:0.2rem 0.4rem">×</button>'
+    + '</div>'
+    + '<div id="legalModalBody" style="overflow-y:auto;padding:1.5rem;font-size:0.83rem;line-height:1.8;color:var(--ink);flex:1"></div>'
+    + '<div style="padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0;text-align:right">'
+      + '<button onclick="closeLegalModal()" style="padding:0.5rem 1.25rem;background:var(--ink);color:#fff;border:none;border-radius:8px;font-family:\'Instrument Sans\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer">Entendido</button>'
+    + '</div>'
+  + '</div>';
+  existing.style.display = 'flex';
+
+  const title = doc === 'terminos' ? 'Términos y Condiciones de Uso' : 'Aviso de Privacidad';
+  const body  = doc === 'terminos' ? getTerminos() : getPrivacidad();
+  document.getElementById('legalModalTitle').textContent = title;
+  document.getElementById('legalModalBody').innerHTML = body;
+}
+
+function closeLegalModal() {
+  const m = document.getElementById('legalModal');
+  if (m) m.style.display = 'none';
+}
+
+// ── ELIMINAR NEGOCIO ─────────────────────────────────────────────
+function confirmDeleteBiz(bizId, bizName) {
+  let existing = document.getElementById('deleteBizModal');
+  if (!existing) {
+    existing = document.createElement('div');
+    existing.id = 'deleteBizModal';
+    existing.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+    document.body.appendChild(existing);
+  }
+  existing.innerHTML = '<div style="background:var(--surface);border-radius:16px;width:100%;max-width:420px;padding:2rem;animation:scaleIn 0.2s ease">'
+    + '<div style="font-family:\'Syne\',sans-serif;font-size:1rem;font-weight:700;margin-bottom:0.75rem">Eliminar negocio</div>'
+    + '<p style="font-size:0.85rem;color:var(--ink-muted);line-height:1.6;margin-bottom:0.5rem">Estas a punto de eliminar <strong style="color:var(--ink)">'+bizName+'</strong> y <strong style="color:var(--red)">todos sus movimientos e importaciones</strong>. Esta acción es permanente y no se puede deshacer.</p>'
+    + '<p style="font-size:0.82rem;color:var(--ink-muted);line-height:1.6;margin-bottom:1.5rem">Si tienes informacion importante, exportala antes de continuar.</p>'
+    + '<div style="display:flex;gap:0.75rem">'
+      + '<button onclick="closeDeleteBizModal()" style="flex:1;padding:0.7rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-family:\'Instrument Sans\',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;color:var(--ink)">Cancelar</button>'
+      + '<button onclick="deleteBiz(\''+bizId+'\')" style="flex:1;padding:0.7rem;background:#c0392b;border:none;border-radius:8px;font-family:\'Instrument Sans\',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;color:#fff" id="btnConfirmDelete">Si, eliminar</button>'
+    + '</div>'
+  + '</div>';
+  existing.style.display = 'flex';
+}
+
+function closeDeleteBizModal() {
+  const m = document.getElementById('deleteBizModal');
+  if (m) m.style.display = 'none';
+}
+
+async function deleteBiz(bizId) {
+  const btn = document.getElementById('btnConfirmDelete');
+  if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
+  try {
+    // Borrar en orden: imports -> transactions -> business
+    await sb.from('imports').delete().eq('business_id', bizId);
+    await sb.from('transactions').delete().eq('business_id', bizId);
+    const { error } = await sb.from('businesses').delete().eq('id', bizId);
+    if (error) throw error;
+    clearCache(bizId);
+    S.businesses = S.businesses.filter(b => b.id !== bizId);
+    S.activeBizId = null;
+    S.transactions = [];
+    _loadedAll = false;
+    closeDeleteBizModal();
+    renderBizList();
+    renderDashboard();
+    showToast('Negocio eliminado correctamente', 'ok');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Si, eliminar'; }
+    showToast('No se pudo eliminar. Intenta de nuevo.', 'err');
+  }
+}
+
+// ── DOCUMENTOS LEGALES ───────────────────────────────────────────
+function getPrivacidad() {
+  return '<p style="font-weight:600;margin-bottom:1rem">ContaFácil &nbsp;·&nbsp; Ultima actualizacion: marzo 2026</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">I. Responsable del tratamiento</p>'
+  + '<p>ContaFácil, contacto: flujo.negocios@gmail.com, es responsable del tratamiento de tus datos personales conforme a la Ley Federal de Proteccion de Datos Personales en Posesion de los Particulares (LFPDPPP) vigente en Mexico.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">II. Datos que recopilamos</p>'
+  + '<p>Nombre, correo electronico y contrasena cifrada. Tambien los datos financieros que tu mismo ingresas: nombre del negocio, movimientos de ingresos y gastos, montos, fechas y categorias. No recopilamos datos bancarios, numeros de tarjeta, RFC ni CURP.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">III. Para que usamos tus datos</p>'
+  + '<p>Finalidades primarias: crear y gestionar tu cuenta, almacenar tus movimientos financieros, mostrarte analisis y reportes, y garantizar la seguridad de tu cuenta. Finalidades secundarias (opcionales): enviarte comunicaciones sobre nuevas funcionalidades. Para no recibirlas escribe a flujo.negocios@gmail.com con el asunto "Opt-out".</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">IV. Terceros con acceso a tus datos</p>'
+  + '<p>Supabase Inc. (EE.UU.) — almacenamiento. Vercel Inc. (EE.UU.) — hospedaje. No vendemos ni compartimos tus datos con terceros para fines comerciales.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">V. Transferencias internacionales</p>'
+  + '<p>Tus datos se almacenan en servidores en Estados Unidos. Al aceptar este aviso consientes dicha transferencia conforme al articulo 36 de la LFPDPPP.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">VI. Tiempo de conservacion</p>'
+  + '<p>Conservamos tus datos mientras tu cuenta este activa. Al solicitar eliminacion, tus datos se borran en maximo 30 dias naturales.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">VII. Tus derechos sobre tus datos</p>'
+  + '<p>Tienes derecho a conocer que datos tenemos de ti, corregirlos si son incorrectos, solicitar que los eliminemos, u oponerte a que los usemos para fines especificos. Escribe a flujo.negocios@gmail.com con el asunto "Mis derechos de privacidad". Respondemos en maximo 20 dias habiles.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">VIII. Seguridad</p>'
+  + '<p>Usamos HTTPS, contrasenas cifradas y control de acceso por autenticacion. En caso de brecha de seguridad te notificaremos conforme a la normativa aplicable.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">IX. Almacenamiento local</p>'
+  + '<p>Usamos localStorage del navegador para guardar preferencias localmente. No usamos cookies de rastreo ni publicidad.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">X. Cambios a este aviso</p>'
+  + '<p>Notificaremos cambios significativos por correo o dentro de la app.</p>'
+  + '<p style="font-size:0.72rem;color:var(--ink-muted);margin-top:1.5rem">Para quejas ante la autoridad competente puedes acudir al INAI en www.inai.org.mx.</p>';
+}
+
+function getTerminos() {
+  return '<p style="font-weight:600;margin-bottom:1rem">ContaFácil &nbsp;·&nbsp; Ultima actualizacion: marzo 2026</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">I. Aceptacion</p>'
+  + '<p>Al crear una cuenta o usar ContaFácil aceptas estos Terminos. Si no estas de acuerdo, abstente de usar el servicio.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">II. Descripcion del servicio</p>'
+  + '<p>ContaFácil es una herramienta digital de registro y visualizacion de movimientos financieros para personas fisicas y pequenas empresas. No es un despacho contable, no emite comprobantes fiscales y no esta certificado ante el SAT. La informacion generada no tiene validez fiscal ni legal salvo que el usuario la respalde con documentacion oficial propia.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">III. Responsabilidad sobre los datos</p>'
+  + '<p>Eres el unico responsable de la exactitud y legalidad de los datos que ingresas. ContaFácil no verifica, audita ni certifica la informacion. Cualquier decision financiera, fiscal o de inversion que tomes basandote en la informacion de la plataforma es responsabilidad exclusivamente tuya. Los analisis y proyecciones tienen caracter meramente informativo y no sustituyen el criterio de un contador certificado.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">IV. Tu cuenta</p>'
+  + '<p>Eres responsable de mantener la confidencialidad de tus credenciales. Nos reservamos el derecho de suspender cuentas que violen estos Terminos sin previo aviso.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">V. Limitacion de responsabilidad</p>'
+  + '<p>ContaFácil no sera responsable por perdida de datos por fallas tecnicas, danos indirectos o consecuentes, perdida de ingresos, ni acceso no autorizado por terceros siempre que hayamos implementado medidas de seguridad razonables. En cualquier caso, nuestra responsabilidad maxima estara limitada al monto total que hayas pagado por el servicio durante los doce meses anteriores al evento que origino la reclamacion.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">VI. Disponibilidad</p>'
+  + '<p>No garantizamos disponibilidad ininterrumpida. No somos responsables por interrupciones causadas por mantenimiento, fallas de infraestructura de terceros o fuerza mayor.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">VII. Servicios de terceros</p>'
+  + '<p>Usamos Supabase Inc. y Vercel Inc. como proveedores de infraestructura. No controlamos sus politicas ni disponibilidad.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">VIII. Propiedad intelectual</p>'
+  + '<p>El diseno, codigo y marca de ContaFácil son propiedad de sus creadores. Los datos que tu ingresas son tuyos — no reclamamos propiedad sobre ellos.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">IX. Cancelacion</p>'
+  + '<p>Puedes cancelar tu cuenta escribiendo a flujo.negocios@gmail.com. Tus datos se eliminan en maximo 30 dias.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">X. Legislacion aplicable</p>'
+  + '<p>Estos Terminos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier controversia se somete a los tribunales competentes de Mexico.</p>'
+  + '<p style="font-weight:600;margin:1rem 0 0.3rem">XI. Contacto</p>'
+  + '<p>flujo.negocios@gmail.com</p>'
+  + '<p style="font-size:0.72rem;color:var(--ink-muted);margin-top:1.5rem">Para efectos de estos Terminos, "ContaFácil" hace referencia al prestador del servicio. La razon social formal sera actualizada en este documento una vez constituida legalmente la empresa.</p>';
+}
+
 function renderBizList() {
   const COLORS = ['#2d6a4f','#e76f51','#264653','#e9c46a','#457b9d'];
   document.getElementById('bizList').innerHTML = S.businesses.map((b,i) => {
     const color = COLORS[i%COLORS.length];
     const isActive = b.id===S.activeBizId;
-    return `<div class="biz-item ${isActive?'active':''}" onclick="selectBiz('${b.id}')">
-      <div class="biz-avatar" style="background:${isActive?'transparent':''}; ${isActive?'padding:0;':'background:'+color+'22;color:'+color}">
-        ${isActive
-          ? `<svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#4ade80"/></svg>`
-          : b.name[0].toUpperCase()
-        }
-      </div>
-      <span>${b.name}</span></div>`;
+    return '<div class="biz-item '+(isActive?'active':'')+'" onclick="selectBiz(\''+b.id+'\')"><div class="biz-avatar" style="'+(isActive?'background:transparent;padding:0;':'background:'+color+'22;color:'+color)+'">'+(isActive?'<svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#4ade80"/></svg>':b.name[0].toUpperCase())+'</div><span>'+b.name+'</span></div>';
   }).join('') || '<p style="font-size:0.75rem;color:rgba(255,255,255,0.25);padding:0.4rem 0.75rem">Sin negocios aún</p>';
+
+  // Botón nuevo negocio solo si no hay negocios
+  // Botón eliminar solo si hay un negocio activo
+  const actions = document.getElementById('bizActions');
+  if (!actions) return;
+  if (S.businesses.length === 0) {
+    actions.innerHTML = '<button class="btn-new-biz" onclick="openBizModal()">+ Nuevo negocio</button>';
+  } else {
+    const biz = S.businesses.find(b => b.id === S.activeBizId);
+    const bizName = biz ? biz.name : 'este negocio';
+    actions.innerHTML = '<button onclick="confirmDeleteBiz(\''+S.activeBizId+'\',\''+bizName.replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.75rem;background:none;border:none;color:rgba(255,255,255,0.25);font-family:\'Instrument Sans\',sans-serif;font-size:0.75rem;cursor:pointer;transition:color .15s;width:100%" onmouseover="this.style.color=\'#f87171\'" onmouseout="this.style.color=\'rgba(255,255,255,0.25)\'"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.6"><path d="M3 4h10M6 4V2h4v2M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Eliminar negocio</button>';
+  }
 }
 
 // Transactions
